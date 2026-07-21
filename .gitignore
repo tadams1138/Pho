@@ -1,0 +1,13 @@
+# Claude Code local files
+.claude/settings.local.json
+CLAUDE.local.md
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vs/
+.vscode/
+
+# Build artifacts (stack-specific entries added once the stack is chosen)

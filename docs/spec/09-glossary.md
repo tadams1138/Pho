@@ -1,0 +1,20 @@
+# 9. Glossary
+
+- **Stub** — one mocking rule: a request matcher paired with a response definition. Pho's central entity. (Elsewhere sometimes called a "mock" or "mapping".)
+- **Mock** — informal synonym for a stub, and the general name for what Pho does (imitate a service).
+- **RequestMatcher** — the part of a stub describing which incoming requests it applies to (method, path, query, headers, body).
+- **ResponseDefinition** — the part of a stub describing what Pho returns (status, headers, body).
+- **Match rule** — how a single field is compared: EQUALS, CONTAINS, REGEX, PRESENT, ABSENT (plus EXACT / WILDCARD / REGEX for paths).
+- **Ambiguous match** — the error condition where more than one enabled stub matches a single request. Pho does not rank stubs (there is no priority); it returns HTTP 500, logs which stubs matched, and flags it in the UI.
+- **Enabled / disabled** — a stub's on/off state; disabled stubs are retained but excluded from matching, letting users toggle between responses.
+- **Group** — an organizational folder for stubs; groups nest into a tree.
+- **ConfigRevision** — an immutable version of the entire mock configuration (all stubs + full group tree), recorded on every change; backs undo/redo and per-mock history. A single mock's history is a derived view of these revisions.
+- **Undo / redo** — stepping backward/forward through the configuration history (ConfigRevisions) to reverse or reapply changes, including cascade group deletion.
+- **Cascade delete** — deleting a group removes everything nested under it (all descendant groups and stubs) as one undoable action.
+- **ReceivedRequest** — a recorded incoming request to the mock-serving surface, used for verification.
+- **Verification / spying** — inspecting ReceivedRequests to confirm the SUT made the expected calls.
+- **Mock-serving surface** — the HTTP endpoints the system under test calls; behaves like the real service and is unauthenticated.
+- **Authoring API** — the app's internal backend that the web UI uses to manage stubs, groups, history, verification, and export/import.
+- **System under test (SUT)** — the software being tested, whose requests Pho answers.
+- **Export / import** — writing all stubs and the group tree to a JSON file for backup, and loading it back to restore.
+- **Single shared instance** — v1's deployment model: one global set of stubs, no per-session isolation.
