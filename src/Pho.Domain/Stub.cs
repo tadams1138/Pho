@@ -15,4 +15,21 @@ public sealed class Stub
     public bool Enabled { get; set; } = true;
     public required RequestMatcher Request { get; set; }
     public required ResponseDefinition Response { get; set; }
+
+    /// <summary>
+    /// Creates a copy of this stub's definition with a new id, a "Copy of …" name, and
+    /// <see cref="Enabled"/> set to false — so it does not immediately collide with the
+    /// original (stubs have no priority; overlapping enabled stubs are an error). See F1.
+    /// The request/response are immutable records and are safely shared by reference.
+    /// </summary>
+    public Stub Duplicate() => new()
+    {
+        Name = $"Copy of {Name}",
+        Description = Description,
+        GroupId = GroupId,
+        Enabled = false,
+        Request = Request,
+        Response = Response
+    };
 }
+
