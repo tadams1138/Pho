@@ -2,6 +2,17 @@
 .claude/settings.local.json
 CLAUDE.local.md
 
+# .NET build artifacts
+[Bb]in/
+[Oo]bj/
+*.user
+*.suo
+
+# SQLite database files
+*.db
+*.db-shm
+*.db-wal
+
 # OS / editor
 .DS_Store
 Thumbs.db
@@ -9,5 +20,3 @@ Thumbs.db
 .idea/
 .vs/
 .vscode/
-
-# Build artifacts (stack-specific entries added once the stack is chosen)

@@ -3,6 +3,7 @@ using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 using FluentAssertions;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Pho.Domain;
@@ -16,8 +17,11 @@ public class MockServingTests
     private static HttpClient ClientWith(params Stub[] stubs)
     {
         var factory = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
+        {
+            builder.UseEnvironment("Testing");
             builder.ConfigureServices(services =>
-                services.AddSingleton<IStubStore>(new InMemoryStubStore(stubs))));
+                services.AddSingleton<IStubStore>(new InMemoryStubStore(stubs)));
+        });
         return factory.CreateClient();
     }
 
