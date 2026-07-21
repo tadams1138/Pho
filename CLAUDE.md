@@ -14,8 +14,10 @@ This is a **spec-first** project: `docs/spec/` is the single source of truth. Re
 
 ## Build / Test
 
-- Build: `dotnet build Pho.sln`
-- Test all: `dotnet test Pho.sln`
+Solution file is `Pho.slnx` (the .NET 10 XML solution format); the arg-less commands below find it automatically.
+
+- Build: `dotnet build`
+- Test all: `dotnet test`
 - Single test: `dotnet test --filter "FullyQualifiedName~<substring>"`
 - Run the app: `dotnet run --project src/Pho.Web`
 

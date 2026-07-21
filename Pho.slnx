@@ -1,8 +1,10 @@
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/Pho.Domain/Pho.Domain.csproj" />
+    <Project Path="src/Pho.Web/Pho.Web.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Pho.Domain.Tests/Pho.Domain.Tests.csproj" />
+    <Project Path="tests/Pho.Web.Tests/Pho.Web.Tests.csproj" />
   </Folder>
 </Solution>

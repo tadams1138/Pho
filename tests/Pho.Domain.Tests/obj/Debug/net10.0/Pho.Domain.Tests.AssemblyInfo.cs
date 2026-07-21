@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Pho.Domain.Tests")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+afb2ed70e5549606593063781731349d2d9d31bf")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+840aa05ff11595a4c893dfb0516a4a2124cf01f4")]
 [assembly: System.Reflection.AssemblyProductAttribute("Pho.Domain.Tests")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Pho.Domain.Tests")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

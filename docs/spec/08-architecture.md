@@ -40,7 +40,7 @@ No separate database container is needed (SQLite is in-process). Concrete image,
 ## Project structure
 
 ```
-Pho.sln
+Pho.slnx
 src/
   Pho.Domain/          # entities + pure logic (matching, history); no external deps
   Pho.Infrastructure/  # EF Core DbContext, SQLite, repositories, retention/pruning
