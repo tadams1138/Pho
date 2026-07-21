@@ -1,0 +1,12 @@
+E:\Pho\src\Pho.Domain\bin\Debug\net10.0\Pho.Domain.deps.json
+E:\Pho\src\Pho.Domain\bin\Debug\net10.0\Pho.Domain.dll
+E:\Pho\src\Pho.Domain\bin\Debug\net10.0\Pho.Domain.pdb
+E:\Pho\src\Pho.Domain\obj\Debug\net10.0\Pho.Domain.GeneratedMSBuildEditorConfig.editorconfig
+E:\Pho\src\Pho.Domain\obj\Debug\net10.0\Pho.Domain.AssemblyInfoInputs.cache
+E:\Pho\src\Pho.Domain\obj\Debug\net10.0\Pho.Domain.AssemblyInfo.cs
+E:\Pho\src\Pho.Domain\obj\Debug\net10.0\Pho.Domain.csproj.CoreCompileInputs.cache
+E:\Pho\src\Pho.Domain\obj\Debug\net10.0\Pho.Domain.sourcelink.json
+E:\Pho\src\Pho.Domain\obj\Debug\net10.0\Pho.Domain.dll
+E:\Pho\src\Pho.Domain\obj\Debug\net10.0\refint\Pho.Domain.dll
+E:\Pho\src\Pho.Domain\obj\Debug\net10.0\Pho.Domain.pdb
+E:\Pho\src\Pho.Domain\obj\Debug\net10.0\ref\Pho.Domain.dll

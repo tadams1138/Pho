@@ -12,7 +12,7 @@ This is what the **system under test** calls. It must behave like the real servi
 - Records a ReceivedRequest for every such call (matched or not). Requests to the authoring/UI endpoints are **not** recorded as received requests.
 - **Is never authenticated** — the SUT treats Pho as the real dependency and sends whatever requests it normally would.
 
-> **Open question:** how the mock-serving surface is addressed relative to the authoring UI/API — a distinct port, a path prefix, or a hostname convention — so that a stub for `/users` doesn't collide with the app's own routes. To be settled with the stack decision.
+**Addressing (decided):** the mock-serving surface runs on its **own port** (default `8081`), separate from the admin UI port (default `8080`). Every request on the mock port is treated as mock traffic, so an arbitrary stub path can never collide with UI routes (`08-architecture.md`).
 
 ## 6.2 Authoring API (the app's own backend)
 

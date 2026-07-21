@@ -6,11 +6,15 @@ This project is **spec-first**: the authoritative specification lives in [`docs/
 
 ## Status
 
-Greenfield — the specification is being written and implementation has not started. The instructions below describe the **intended** deployment. Steps marked _TODO_ await the stack decision (see [`docs/spec/08-architecture.md`](docs/spec/08-architecture.md)); `docker compose up` is not yet available.
+Under construction. The specification is complete; the app is being built (.NET 10, ASP.NET Core + Blazor, EF Core/SQLite). `docker compose up` is not wired up yet — the Dockerfile/compose file land later in the build.
+
+## Tech stack
+
+.NET 10 · ASP.NET Core · Blazor (Interactive Server) · EF Core + SQLite · xUnit + FluentAssertions.
 
 ## Deploying with Docker Compose
 
-Pho is deployed via Docker Compose: the application plus a persistent database, so mock definitions survive restarts.
+Pho deploys as a **single container** (SQLite is in-process — no separate database service).
 
 ### Prerequisites
 
@@ -21,12 +25,13 @@ Pho is deployed via Docker Compose: the application plus a persistent database, 
 ```bash
 git clone https://github.com/tadams1138/Pho.git
 cd Pho
-docker compose up -d      # builds and starts Pho and its database
+docker compose up -d      # builds and starts Pho
 ```
 
-Open the web UI at `http://localhost:8080` _(port TBD)_ to create mocks. The system under test then sends its requests to the same host/port and receives your configured responses.
+- Admin UI: `http://localhost:8080` — create and manage mocks.
+- Mock-serving surface: `http://localhost:8081` — point the system under test here; it receives your configured responses (or 404 when nothing matches).
 
-Mock definitions are stored in a named Docker volume and persist across restarts.
+The SQLite database is stored on a named Docker volume and persists across restarts.
 
 ```bash
 docker compose down       # stop, keep data
