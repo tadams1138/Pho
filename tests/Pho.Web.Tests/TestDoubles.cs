@@ -38,6 +38,18 @@ internal sealed class FakeStubRepository : IStubRepository
     public Task DeleteAsync(Guid id) { _stubs.Remove(id); return Task.CompletedTask; }
 }
 
+/// <summary>No-op config history store for admin-UI tests.</summary>
+internal sealed class FakeConfigHistoryStore : IConfigHistoryStore
+{
+    public Task<int> GetCurrentSequenceAsync() => Task.FromResult(0);
+    public Task SetCurrentSequenceAsync(int sequence) => Task.CompletedTask;
+    public Task<ConfigSnapshot> CaptureAsync() => Task.FromResult(ConfigSnapshot.Empty);
+    public Task RestoreAsync(ConfigSnapshot snapshot) => Task.CompletedTask;
+    public Task AppendRevisionAsync(int sequence, string summary, ConfigSnapshot snapshot) => Task.CompletedTask;
+    public Task TruncateAfterAsync(int sequence) => Task.CompletedTask;
+    public Task<ConfigSnapshot?> GetRevisionSnapshotAsync(int sequence) => Task.FromResult<ConfigSnapshot?>(null);
+}
+
 /// <summary>In-memory group repository for admin-UI tests.</summary>
 internal sealed class FakeGroupRepository : IGroupRepository
 {

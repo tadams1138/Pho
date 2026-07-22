@@ -25,8 +25,10 @@ builder.Services.AddDbContext<PhoDbContext>(options => options.UseSqlite(connect
 builder.Services.AddScoped<IStubStore, EfStubStore>();
 builder.Services.AddScoped<IStubRepository, EfStubRepository>();
 builder.Services.AddScoped<IGroupRepository, EfGroupRepository>();
+builder.Services.AddScoped<IConfigHistoryStore, EfConfigHistoryStore>();
 builder.Services.AddScoped<StubService>();
 builder.Services.AddScoped<GroupService>();
+builder.Services.AddScoped<ConfigHistoryService>();
 builder.Services.AddSingleton<IMockTrafficPolicy>(new PortMockTrafficPolicy(mockPort));
 
 builder.Services.AddRazorComponents().AddInteractiveServerComponents();

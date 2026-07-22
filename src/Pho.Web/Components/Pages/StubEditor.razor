@@ -3,6 +3,7 @@
 @rendermode InteractiveServer
 @inject StubService Stubs
 @inject GroupService Groups
+@inject ConfigHistoryService History
 @inject NavigationManager Nav
 
 <h1>@(Id is null ? "New stub" : "Edit stub")</h1>
@@ -135,6 +136,7 @@
             });
         }
 
+        await History.RecordAsync($"Saved stub '{_name}'");
         Nav.NavigateTo("/");
     }
 }

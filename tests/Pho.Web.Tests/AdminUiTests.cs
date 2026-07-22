@@ -23,6 +23,7 @@ public class AdminUiTests
             {
                 services.AddSingleton<IStubRepository>(new FakeStubRepository());
                 services.AddSingleton<IGroupRepository>(new FakeGroupRepository());
+                services.AddSingleton<IConfigHistoryStore>(new FakeConfigHistoryStore());
             });
         });
         return factory.CreateClient();

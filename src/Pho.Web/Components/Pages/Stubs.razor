@@ -2,6 +2,7 @@
 @rendermode InteractiveServer
 @inject StubService StubSvc
 @inject GroupService Groups
+@inject ConfigHistoryService History
 @inject NavigationManager Nav
 
 <h1>Stubs</h1>
@@ -10,6 +11,8 @@
     <button @onclick="@(() => Nav.NavigateTo("/stubs/new"))">New stub</button>
     <input type="text" placeholder="New group name" @bind="_newGroupName" />
     <button @onclick="AddGroupAsync">Add group</button>
+    <button @onclick="UndoAsync" disabled="@(!_canUndo)">Undo</button>
+    <button @onclick="RedoAsync" disabled="@(!_canRedo)">Redo</button>
 </div>
 
 @if (_tree is null)
@@ -37,6 +40,8 @@ else
     private GroupNode? _tree;
     private string _newGroupName = "";
     private Guid? _pendingDeleteGroupId;
+    private bool _canUndo;
+    private bool _canRedo;
 
     protected override Task OnInitializedAsync() => LoadAsync();
 
@@ -45,14 +50,23 @@ else
         var groups = await Groups.ListAsync();
         var stubs = await StubSvc.ListAsync();
         _tree = GroupTree.Build(groups, stubs);
+        _canUndo = await History.CanUndoAsync();
+        _canRedo = await History.CanRedoAsync();
+    }
+
+    private async Task RecordAndReloadAsync(string summary)
+    {
+        await History.RecordAsync(summary);
+        await LoadAsync();
     }
 
     private async Task AddGroupAsync()
     {
         if (string.IsNullOrWhiteSpace(_newGroupName)) return;
-        await Groups.CreateAsync(_newGroupName.Trim());
+        var name = _newGroupName.Trim();
+        await Groups.CreateAsync(name);
         _newGroupName = "";
-        await LoadAsync();
+        await RecordAndReloadAsync($"Added group '{name}'");
     }
 
     private void RequestDeleteGroup(Group group) => _pendingDeleteGroupId = group.Id;
@@ -63,7 +77,7 @@ else
     {
         await Groups.DeleteAsync(group.Id);
         _pendingDeleteGroupId = null;
-        await LoadAsync();
+        await RecordAndReloadAsync($"Deleted group '{group.Name}'");
     }
 
     private void EditStub(Stub stub) => Nav.NavigateTo($"/stubs/{stub.Id}");
@@ -71,18 +85,31 @@ else
     private async Task DuplicateStubAsync(Stub stub)
     {
         await StubSvc.DuplicateAsync(stub.Id);
-        await LoadAsync();
+        await RecordAndReloadAsync($"Duplicated stub '{stub.Name}'");
     }
 
     private async Task DeleteStubAsync(Stub stub)
     {
         await StubSvc.DeleteAsync(stub.Id);
-        await LoadAsync();
+        await RecordAndReloadAsync($"Deleted stub '{stub.Name}'");
     }
 
     private async Task ToggleStubAsync((Stub Stub, bool Enabled) change)
     {
         await StubSvc.SetEnabledAsync(change.Stub.Id, change.Enabled);
+        var verb = change.Enabled ? "Enabled" : "Disabled";
+        await RecordAndReloadAsync($"{verb} stub '{change.Stub.Name}'");
+    }
+
+    private async Task UndoAsync()
+    {
+        await History.UndoAsync();
+        await LoadAsync();
+    }
+
+    private async Task RedoAsync()
+    {
+        await History.RedoAsync();
         await LoadAsync();
     }
 }

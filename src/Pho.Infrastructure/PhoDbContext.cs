@@ -13,7 +13,7 @@ namespace Pho.Infrastructure;
 /// </summary>
 public sealed class PhoDbContext : DbContext
 {
-    private static readonly JsonSerializerOptions JsonOptions = new()
+    internal static readonly JsonSerializerOptions JsonOptions = new()
     {
         Converters = { new JsonStringEnumConverter() }
     };
@@ -24,12 +24,20 @@ public sealed class PhoDbContext : DbContext
 
     public DbSet<Stub> Stubs => Set<Stub>();
     public DbSet<Group> Groups => Set<Group>();
+    public DbSet<ConfigRevisionRecord> ConfigRevisions => Set<ConfigRevisionRecord>();
+    public DbSet<HistoryState> HistoryState => Set<HistoryState>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         var group = modelBuilder.Entity<Group>();
         group.HasKey(g => g.Id);
         group.Property(g => g.Name).IsRequired();
+
+        var revision = modelBuilder.Entity<ConfigRevisionRecord>();
+        revision.HasKey(r => r.Id);
+        revision.HasIndex(r => r.Sequence).IsUnique();
+
+        modelBuilder.Entity<HistoryState>().HasKey(h => h.Id);
 
         var stub = modelBuilder.Entity<Stub>();
         stub.HasKey(s => s.Id);
