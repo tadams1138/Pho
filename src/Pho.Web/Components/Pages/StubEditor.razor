@@ -14,7 +14,11 @@
 }
 
 <label>Name
-    <input type="text" @bind="_name" />
+    <input type="text" @bind="_name" spellcheck="true" />
+</label>
+
+<label>Description
+    <input type="text" @bind="_description" spellcheck="true" />
 </label>
 
 <label>Group
@@ -49,30 +53,51 @@
     <input type="text" @bind="_path" />
 </label>
 
+<label>Request body match
+    <select @bind="_bodyMatchType">
+        <option value="">(no body match)</option>
+        @foreach (var t in Enum.GetValues<MatchRuleType>())
+        {
+            <option value="@t">@t</option>
+        }
+    </select>
+</label>
+
+@if (!string.IsNullOrEmpty(_bodyMatchType) && _bodyMatchType is not "Present" and not "Absent")
+{
+    <div>Request body value</div>
+    <BodyEditor @bind-Value="_bodyMatchValue" />
+}
+
 <label>Response status
     <input type="number" @bind="_status" />
 </label>
 
-<label>Response body
-    <textarea @bind="_body"></textarea>
-</label>
+<div>Response body</div>
+<BodyEditor @bind-Value="_body" />
 
 <label>
     <input type="checkbox" @bind="_enabled" /> Enabled
 </label>
 
-<button @onclick="SaveAsync">Save</button>
-<button @onclick="@(() => Nav.NavigateTo("/"))">Cancel</button>
+<div class="toolbar">
+    <button @onclick="SaveAsync">Save</button>
+    <button @onclick="@(() => Nav.NavigateTo("/"))">Cancel</button>
+</div>
 
 @code {
     [Parameter] public Guid? Id { get; set; }
 
     private IReadOnlyList<Group> _groups = new List<Group>();
+    private RequestMatcher? _baseRequest;
     private string _name = "";
+    private string _description = "";
     private string _groupId = "";
     private HttpMethodMatch _method = HttpMethodMatch.Get;
     private PathMatchType _pathType = PathMatchType.Exact;
     private string _path = "/";
+    private string _bodyMatchType = "";
+    private string _bodyMatchValue = "";
     private int _status = 200;
     private string _body = "";
     private bool _enabled = true;
@@ -91,10 +116,14 @@
             if (existing is not null)
             {
                 _name = existing.Name;
+                _description = existing.Description ?? "";
                 _groupId = existing.GroupId?.ToString() ?? "";
+                _baseRequest = existing.Request;
                 _method = existing.Request.Method;
                 _pathType = existing.Request.Path.Type;
                 _path = existing.Request.Path.Value;
+                _bodyMatchType = existing.Request.Body?.Type.ToString() ?? "";
+                _bodyMatchValue = existing.Request.Body?.Value ?? "";
                 _status = existing.Response.Status;
                 _body = existing.Response.Body;
                 _enabled = existing.Enabled;
@@ -108,8 +137,20 @@
         if (string.IsNullOrWhiteSpace(_path)) { _error = "Path is required."; return; }
 
         var groupId = string.IsNullOrEmpty(_groupId) ? (Guid?)null : Guid.Parse(_groupId);
-        var request = new RequestMatcher { Method = _method, Path = new PathMatcher(_pathType, _path) };
+        var bodyRule = string.IsNullOrEmpty(_bodyMatchType)
+            ? null
+            : new MatchRule(Enum.Parse<MatchRuleType>(_bodyMatchType), _bodyMatchValue);
+
+        // Preserve any query/header matchers that aren't editable in this minimal form.
+        var baseRequest = _baseRequest ?? new RequestMatcher { Path = new PathMatcher(_pathType, _path) };
+        var request = baseRequest with
+        {
+            Method = _method,
+            Path = new PathMatcher(_pathType, _path),
+            Body = bodyRule
+        };
         var response = new ResponseDefinition { Status = _status, Body = _body };
+        var description = string.IsNullOrWhiteSpace(_description) ? null : _description;
 
         if (Id is Guid id)
         {
@@ -117,6 +158,7 @@
             if (existing is not null)
             {
                 existing.Name = _name;
+                existing.Description = description;
                 existing.GroupId = groupId;
                 existing.Enabled = _enabled;
                 existing.Request = request;
@@ -129,6 +171,7 @@
             await Stubs.CreateAsync(new Stub
             {
                 Name = _name,
+                Description = description,
                 GroupId = groupId,
                 Enabled = _enabled,
                 Request = request,

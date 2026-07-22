@@ -6,22 +6,53 @@
     <base href="/" />
     <title>Pho — Mock Web Service</title>
     <style>
-        body { font-family: system-ui, sans-serif; margin: 0; color: #1a1a1a; background: #fff; }
+        :root { --bg: #ffffff; --fg: #1a1a1a; --border: #e5e5e5; --muted: #666; --accent: #0b5; --err: #b00020; }
+        @@media (prefers-color-scheme: dark) {
+            :root { --bg: #1e1e1e; --fg: #ececec; --border: #3a3a3a; --muted: #a0a0a0; --accent: #3d9; --err: #ff6b81; }
+        }
+        :root[data-theme="light"] { --bg: #ffffff; --fg: #1a1a1a; --border: #e5e5e5; --muted: #666; --accent: #0b5; --err: #b00020; }
+        :root[data-theme="dark"] { --bg: #1e1e1e; --fg: #ececec; --border: #3a3a3a; --muted: #a0a0a0; --accent: #3d9; --err: #ff6b81; }
+
+        body { font-family: system-ui, sans-serif; margin: 0; color: var(--fg); background: var(--bg); }
         main { max-width: 960px; margin: 0 auto; padding: 1.5rem; }
         header h1 { font-size: 1.4rem; }
+        header nav a { margin-right: 1rem; color: var(--accent); }
         table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
-        th, td { text-align: left; padding: 0.4rem 0.6rem; border-bottom: 1px solid #e5e5e5; }
+        th, td { text-align: left; padding: 0.4rem 0.6rem; border-bottom: 1px solid var(--border); }
         button { margin-right: 0.35rem; }
         label { display: block; margin: 0.6rem 0; }
-        input[type=text], input[type=number], textarea, select { width: 100%; max-width: 32rem; padding: 0.3rem; }
-        textarea { min-height: 8rem; font-family: monospace; }
+        input[type=text], input[type=number], textarea, select {
+            width: 100%; max-width: 32rem; padding: 0.3rem;
+            background: var(--bg); color: var(--fg); border: 1px solid var(--border);
+        }
+        textarea, .body-editor { min-height: 6rem; font-family: monospace; }
         .toolbar { display: flex; gap: 0.5rem; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; }
+        .body-tools { display: flex; gap: 0.35rem; align-items: center; margin: 0.3rem 0 0.8rem; flex-wrap: wrap; }
+        .body-tools .ok { color: var(--accent); }
+        .body-tools .err { color: var(--err); }
         ul.tree { list-style: none; padding-left: 1.2rem; }
         ul.tree li { margin: 0.25rem 0; }
         .group { font-weight: 600; }
         .stub span { margin: 0 0.4rem; }
-        .confirm { color: #b00020; margin-left: 0.4rem; }
+        .confirm { color: var(--err); margin-left: 0.4rem; }
+        .detail code { display: block; }
+        .theme-toggle { margin-left: auto; font-size: 0.85rem; }
     </style>
+    <script>
+        // Apply any stored theme before render to avoid a flash.
+        (function () {
+            try {
+                var t = localStorage.getItem('pho-theme');
+                if (t) document.documentElement.setAttribute('data-theme', t);
+            } catch (e) { }
+        })();
+        function phoSetTheme(t) {
+            try {
+                if (t === 'system') { localStorage.removeItem('pho-theme'); document.documentElement.removeAttribute('data-theme'); }
+                else { localStorage.setItem('pho-theme', t); document.documentElement.setAttribute('data-theme', t); }
+            } catch (e) { }
+        }
+    </script>
     <HeadOutlet />
 </head>
 <body>

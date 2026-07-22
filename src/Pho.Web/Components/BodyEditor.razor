@@ -1,0 +1,53 @@
+@* Textarea with JSON/XML format + validate buttons and spell-check (F9/F10). Two-way bind via @bind-Value. *@
+
+<textarea class="body-editor" value="@Value" @oninput="OnInputAsync" spellcheck="true" rows="6"></textarea>
+<div class="body-tools">
+    <button type="button" @onclick="@(() => ApplyAsync(BodyFormatter.FormatJson(Value), apply: true))">Format JSON</button>
+    <button type="button" @onclick="@(() => Report(BodyFormatter.FormatJson(Value)))">Validate JSON</button>
+    <button type="button" @onclick="@(() => ApplyAsync(BodyFormatter.FormatXml(Value), apply: true))">Format XML</button>
+    <button type="button" @onclick="@(() => Report(BodyFormatter.FormatXml(Value)))">Validate XML</button>
+    @if (_message is not null)
+    {
+        <span class="@(_ok ? "ok" : "err")">@_message</span>
+    }
+</div>
+
+@code {
+    [Parameter] public string Value { get; set; } = "";
+    [Parameter] public EventCallback<string> ValueChanged { get; set; }
+
+    private string? _message;
+    private bool _ok;
+
+    private async Task OnInputAsync(ChangeEventArgs e)
+    {
+        Value = e.Value?.ToString() ?? "";
+        _message = null;
+        await ValueChanged.InvokeAsync(Value);
+    }
+
+    private async Task ApplyAsync(FormatResult result, bool apply)
+    {
+        if (result.Ok)
+        {
+            _ok = true;
+            _message = "Formatted.";
+            if (apply)
+            {
+                Value = result.Output;
+                await ValueChanged.InvokeAsync(Value);
+            }
+        }
+        else
+        {
+            _ok = false;
+            _message = result.Error;
+        }
+    }
+
+    private void Report(FormatResult result)
+    {
+        _ok = result.Ok;
+        _message = result.Ok ? "Valid." : result.Error;
+    }
+}
