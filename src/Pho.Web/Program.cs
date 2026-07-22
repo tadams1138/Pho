@@ -2,25 +2,49 @@ using Microsoft.EntityFrameworkCore;
 using Pho.Domain;
 using Pho.Infrastructure;
 using Pho.Web;
+using Pho.Web.Components;
 
 var builder = WebApplication.CreateBuilder(args);
+
+var adminPort = builder.Configuration.GetValue<int?>("Pho:AdminPort") ?? 8080;
+var mockPort = builder.Configuration.GetValue<int?>("Pho:MockPort") ?? 8081;
+
+// Two ports: admin UI (8080) and mock-serving surface (8081). Skipped under Testing,
+// where the in-memory TestServer has no real sockets.
+if (!builder.Environment.IsEnvironment("Testing"))
+{
+    builder.WebHost.ConfigureKestrel(options =>
+    {
+        options.ListenAnyIP(adminPort);
+        options.ListenAnyIP(mockPort);
+    });
+}
 
 var connectionString = builder.Configuration.GetConnectionString("Pho") ?? "Data Source=pho.db";
 builder.Services.AddDbContext<PhoDbContext>(options => options.UseSqlite(connectionString));
 builder.Services.AddScoped<IStubStore, EfStubStore>();
+builder.Services.AddScoped<IStubRepository, EfStubRepository>();
+builder.Services.AddScoped<StubService>();
+builder.Services.AddSingleton<IMockTrafficPolicy>(new PortMockTrafficPolicy(mockPort));
+
+builder.Services.AddRazorComponents().AddInteractiveServerComponents();
 
 var app = builder.Build();
 
-// Create the SQLite schema on startup. Skipped under the "Testing" environment, where
-// integration tests supply their own store.
 if (!app.Environment.IsEnvironment("Testing"))
 {
     using var scope = app.Services.CreateScope();
     scope.ServiceProvider.GetRequiredService<PhoDbContext>().Database.EnsureCreated();
 }
 
-// The mock-serving surface: every request is treated as mock traffic.
-app.UseMiddleware<MockServingMiddleware>();
+// Mock-serving surface: requests on the mock port are handled entirely by the mock middleware
+// and never reach the Blazor UI.
+var policy = app.Services.GetRequiredService<IMockTrafficPolicy>();
+app.MapWhen(policy.IsMockTraffic, mockApp => mockApp.UseMiddleware<MockServingMiddleware>());
+
+// Admin UI (Blazor) on the admin port.
+app.UseAntiforgery();
+app.MapRazorComponents<App>().AddInteractiveServerRenderMode();
 
 app.Run();
 

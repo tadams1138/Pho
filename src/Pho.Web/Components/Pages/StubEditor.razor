@@ -1,0 +1,118 @@
+@page "/stubs/new"
+@page "/stubs/{Id:guid}"
+@rendermode InteractiveServer
+@inject StubService Stubs
+@inject NavigationManager Nav
+
+<h1>@(Id is null ? "New stub" : "Edit stub")</h1>
+
+@if (_error is not null)
+{
+    <p style="color:#b00020">@_error</p>
+}
+
+<label>Name
+    <input type="text" @bind="_name" />
+</label>
+
+<label>Method
+    <select @bind="_method">
+        @foreach (var m in Enum.GetValues<HttpMethodMatch>())
+        {
+            <option value="@m">@m</option>
+        }
+    </select>
+</label>
+
+<label>Path match type
+    <select @bind="_pathType">
+        @foreach (var t in Enum.GetValues<PathMatchType>())
+        {
+            <option value="@t">@t</option>
+        }
+    </select>
+</label>
+
+<label>Path
+    <input type="text" @bind="_path" />
+</label>
+
+<label>Response status
+    <input type="number" @bind="_status" />
+</label>
+
+<label>Response body
+    <textarea @bind="_body"></textarea>
+</label>
+
+<label>
+    <input type="checkbox" @bind="_enabled" /> Enabled
+</label>
+
+<button @onclick="SaveAsync">Save</button>
+<button @onclick="@(() => Nav.NavigateTo("/"))">Cancel</button>
+
+@code {
+    [Parameter] public Guid? Id { get; set; }
+
+    private string _name = "";
+    private HttpMethodMatch _method = HttpMethodMatch.Get;
+    private PathMatchType _pathType = PathMatchType.Exact;
+    private string _path = "/";
+    private int _status = 200;
+    private string _body = "";
+    private bool _enabled = true;
+    private string? _error;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Id is Guid id)
+        {
+            var existing = await Stubs.GetAsync(id);
+            if (existing is not null)
+            {
+                _name = existing.Name;
+                _method = existing.Request.Method;
+                _pathType = existing.Request.Path.Type;
+                _path = existing.Request.Path.Value;
+                _status = existing.Response.Status;
+                _body = existing.Response.Body;
+                _enabled = existing.Enabled;
+            }
+        }
+    }
+
+    private async Task SaveAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_name)) { _error = "Name is required."; return; }
+        if (string.IsNullOrWhiteSpace(_path)) { _error = "Path is required."; return; }
+
+        var request = new RequestMatcher { Method = _method, Path = new PathMatcher(_pathType, _path) };
+        var response = new ResponseDefinition { Status = _status, Body = _body };
+
+        if (Id is Guid id)
+        {
+            var existing = await Stubs.GetAsync(id);
+            if (existing is not null)
+            {
+                existing.Name = _name;
+                existing.Enabled = _enabled;
+                existing.Request = request;
+                existing.Response = response;
+                await Stubs.UpdateAsync(existing);
+            }
+        }
+        else
+        {
+            await Stubs.CreateAsync(new Stub
+            {
+                Name = _name,
+                Enabled = _enabled,
+                Request = request,
+                Response = response
+            });
+        }
+
+        Nav.NavigateTo("/");
+    }
+}

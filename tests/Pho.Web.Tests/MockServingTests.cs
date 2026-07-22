@@ -20,7 +20,10 @@ public class MockServingTests
         {
             builder.UseEnvironment("Testing");
             builder.ConfigureServices(services =>
-                services.AddSingleton<IStubStore>(new InMemoryStubStore(stubs)));
+            {
+                services.AddSingleton<IStubStore>(new InMemoryStubStore(stubs));
+                services.AddSingleton<IMockTrafficPolicy, AlwaysMockTrafficPolicy>();
+            });
         });
         return factory.CreateClient();
     }

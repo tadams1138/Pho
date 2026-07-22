@@ -1,0 +1,70 @@
+@page "/"
+@rendermode InteractiveServer
+@inject StubService Service
+@inject NavigationManager Nav
+
+<h1>Stubs</h1>
+
+<button @onclick="@(() => Nav.NavigateTo("/stubs/new"))">New stub</button>
+
+@if (_stubs is null)
+{
+    <p>Loading…</p>
+}
+else if (_stubs.Count == 0)
+{
+    <p>No stubs yet. Create one to start mocking.</p>
+}
+else
+{
+    <table>
+        <thead>
+            <tr><th>Name</th><th>Method</th><th>Path</th><th>Enabled</th><th></th></tr>
+        </thead>
+        <tbody>
+            @foreach (var stub in _stubs)
+            {
+                <tr>
+                    <td>@stub.Name</td>
+                    <td>@stub.Request.Method</td>
+                    <td>@stub.Request.Path.Value</td>
+                    <td>
+                        <input type="checkbox" checked="@stub.Enabled"
+                               @onchange="@(e => ToggleAsync(stub, e))" />
+                    </td>
+                    <td>
+                        <button @onclick="@(() => Nav.NavigateTo($"/stubs/{stub.Id}"))">Edit</button>
+                        <button @onclick="@(() => DuplicateAsync(stub))">Duplicate</button>
+                        <button @onclick="@(() => DeleteAsync(stub))">Delete</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private IReadOnlyList<Stub>? _stubs;
+
+    protected override Task OnInitializedAsync() => LoadAsync();
+
+    private async Task LoadAsync() => _stubs = await Service.ListAsync();
+
+    private async Task ToggleAsync(Stub stub, ChangeEventArgs e)
+    {
+        await Service.SetEnabledAsync(stub.Id, (bool)e.Value!);
+        await LoadAsync();
+    }
+
+    private async Task DuplicateAsync(Stub stub)
+    {
+        await Service.DuplicateAsync(stub.Id);
+        await LoadAsync();
+    }
+
+    private async Task DeleteAsync(Stub stub)
+    {
+        await Service.DeleteAsync(stub.Id);
+        await LoadAsync();
+    }
+}
