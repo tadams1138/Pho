@@ -24,7 +24,9 @@ var connectionString = builder.Configuration.GetConnectionString("Pho") ?? "Data
 builder.Services.AddDbContext<PhoDbContext>(options => options.UseSqlite(connectionString));
 builder.Services.AddScoped<IStubStore, EfStubStore>();
 builder.Services.AddScoped<IStubRepository, EfStubRepository>();
+builder.Services.AddScoped<IGroupRepository, EfGroupRepository>();
 builder.Services.AddScoped<StubService>();
+builder.Services.AddScoped<GroupService>();
 builder.Services.AddSingleton<IMockTrafficPolicy>(new PortMockTrafficPolicy(mockPort));
 
 builder.Services.AddRazorComponents().AddInteractiveServerComponents();

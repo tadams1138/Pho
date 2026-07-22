@@ -2,6 +2,7 @@
 @page "/stubs/{Id:guid}"
 @rendermode InteractiveServer
 @inject StubService Stubs
+@inject GroupService Groups
 @inject NavigationManager Nav
 
 <h1>@(Id is null ? "New stub" : "Edit stub")</h1>
@@ -13,6 +14,16 @@
 
 <label>Name
     <input type="text" @bind="_name" />
+</label>
+
+<label>Group
+    <select @bind="_groupId">
+        <option value="">(none)</option>
+        @foreach (var group in _groups)
+        {
+            <option value="@group.Id">@group.Name</option>
+        }
+    </select>
 </label>
 
 <label>Method
@@ -55,7 +66,9 @@
 @code {
     [Parameter] public Guid? Id { get; set; }
 
+    private IReadOnlyList<Group> _groups = new List<Group>();
     private string _name = "";
+    private string _groupId = "";
     private HttpMethodMatch _method = HttpMethodMatch.Get;
     private PathMatchType _pathType = PathMatchType.Exact;
     private string _path = "/";
@@ -63,6 +76,11 @@
     private string _body = "";
     private bool _enabled = true;
     private string? _error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _groups = await Groups.ListAsync();
+    }
 
     protected override async Task OnParametersSetAsync()
     {
@@ -72,6 +90,7 @@
             if (existing is not null)
             {
                 _name = existing.Name;
+                _groupId = existing.GroupId?.ToString() ?? "";
                 _method = existing.Request.Method;
                 _pathType = existing.Request.Path.Type;
                 _path = existing.Request.Path.Value;
@@ -87,6 +106,7 @@
         if (string.IsNullOrWhiteSpace(_name)) { _error = "Name is required."; return; }
         if (string.IsNullOrWhiteSpace(_path)) { _error = "Path is required."; return; }
 
+        var groupId = string.IsNullOrEmpty(_groupId) ? (Guid?)null : Guid.Parse(_groupId);
         var request = new RequestMatcher { Method = _method, Path = new PathMatcher(_pathType, _path) };
         var response = new ResponseDefinition { Status = _status, Body = _body };
 
@@ -96,6 +116,7 @@
             if (existing is not null)
             {
                 existing.Name = _name;
+                existing.GroupId = groupId;
                 existing.Enabled = _enabled;
                 existing.Request = request;
                 existing.Response = response;
@@ -107,6 +128,7 @@
             await Stubs.CreateAsync(new Stub
             {
                 Name = _name,
+                GroupId = groupId,
                 Enabled = _enabled,
                 Request = request,
                 Response = response

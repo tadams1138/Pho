@@ -20,7 +20,10 @@ public class AdminUiTests
         {
             builder.UseEnvironment("Testing");
             builder.ConfigureServices(services =>
-                services.AddSingleton<IStubRepository>(new FakeStubRepository()));
+            {
+                services.AddSingleton<IStubRepository>(new FakeStubRepository());
+                services.AddSingleton<IGroupRepository>(new FakeGroupRepository());
+            });
         });
         return factory.CreateClient();
     }

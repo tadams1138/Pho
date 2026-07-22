@@ -1,0 +1,53 @@
+@* Recursively renders a GroupNode: child groups (with delete) and stubs (with actions). *@
+
+<ul class="tree">
+    @foreach (var child in Node.Children)
+    {
+        <li>
+            <span class="group">📁 @child.Group!.Name</span>
+            @if (PendingDeleteGroupId == child.Group.Id)
+            {
+                <span class="confirm">Delete group and everything inside it?
+                    <button @onclick="() => OnDeleteGroup.InvokeAsync(child.Group)">Yes, delete</button>
+                    <button @onclick="() => OnCancelDeleteGroup.InvokeAsync()">Cancel</button>
+                </span>
+            }
+            else
+            {
+                <button @onclick="() => OnRequestDeleteGroup.InvokeAsync(child.Group)">Delete group</button>
+            }
+            <GroupTreeView Node="child"
+                           PendingDeleteGroupId="PendingDeleteGroupId"
+                           OnRequestDeleteGroup="OnRequestDeleteGroup"
+                           OnCancelDeleteGroup="OnCancelDeleteGroup"
+                           OnDeleteGroup="OnDeleteGroup"
+                           OnEditStub="OnEditStub"
+                           OnDuplicateStub="OnDuplicateStub"
+                           OnDeleteStub="OnDeleteStub"
+                           OnToggleStub="OnToggleStub" />
+        </li>
+    }
+    @foreach (var stub in Node.Stubs)
+    {
+        <li class="stub">
+            <input type="checkbox" checked="@stub.Enabled"
+                   @onchange="e => OnToggleStub.InvokeAsync((stub, (bool)e.Value!))" />
+            <span>@stub.Name — @stub.Request.Method @stub.Request.Path.Value</span>
+            <button @onclick="() => OnEditStub.InvokeAsync(stub)">Edit</button>
+            <button @onclick="() => OnDuplicateStub.InvokeAsync(stub)">Duplicate</button>
+            <button @onclick="() => OnDeleteStub.InvokeAsync(stub)">Delete</button>
+        </li>
+    }
+</ul>
+
+@code {
+    [Parameter] public required GroupNode Node { get; set; }
+    [Parameter] public Guid? PendingDeleteGroupId { get; set; }
+    [Parameter] public EventCallback<Group> OnRequestDeleteGroup { get; set; }
+    [Parameter] public EventCallback OnCancelDeleteGroup { get; set; }
+    [Parameter] public EventCallback<Group> OnDeleteGroup { get; set; }
+    [Parameter] public EventCallback<Stub> OnEditStub { get; set; }
+    [Parameter] public EventCallback<Stub> OnDuplicateStub { get; set; }
+    [Parameter] public EventCallback<Stub> OnDeleteStub { get; set; }
+    [Parameter] public EventCallback<(Stub Stub, bool Enabled)> OnToggleStub { get; set; }
+}

@@ -37,3 +37,21 @@ internal sealed class FakeStubRepository : IStubRepository
 
     public Task DeleteAsync(Guid id) { _stubs.Remove(id); return Task.CompletedTask; }
 }
+
+/// <summary>In-memory group repository for admin-UI tests.</summary>
+internal sealed class FakeGroupRepository : IGroupRepository
+{
+    private readonly Dictionary<Guid, Group> _groups = new();
+
+    public Task<IReadOnlyList<Group>> ListAsync()
+        => Task.FromResult<IReadOnlyList<Group>>(_groups.Values.ToList());
+
+    public Task<Group?> GetAsync(Guid id)
+        => Task.FromResult(_groups.GetValueOrDefault(id));
+
+    public Task AddAsync(Group group) { _groups[group.Id] = group; return Task.CompletedTask; }
+
+    public Task UpdateAsync(Group group) { _groups[group.Id] = group; return Task.CompletedTask; }
+
+    public Task DeleteAsync(Guid id) { _groups.Remove(id); return Task.CompletedTask; }
+}

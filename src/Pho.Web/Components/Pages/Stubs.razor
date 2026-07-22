@@ -1,70 +1,88 @@
 @page "/"
 @rendermode InteractiveServer
-@inject StubService Service
+@inject StubService StubSvc
+@inject GroupService Groups
 @inject NavigationManager Nav
 
 <h1>Stubs</h1>
 
-<button @onclick="@(() => Nav.NavigateTo("/stubs/new"))">New stub</button>
+<div class="toolbar">
+    <button @onclick="@(() => Nav.NavigateTo("/stubs/new"))">New stub</button>
+    <input type="text" placeholder="New group name" @bind="_newGroupName" />
+    <button @onclick="AddGroupAsync">Add group</button>
+</div>
 
-@if (_stubs is null)
+@if (_tree is null)
 {
     <p>Loading…</p>
 }
-else if (_stubs.Count == 0)
+else if (_tree.Children.Count == 0 && _tree.Stubs.Count == 0)
 {
-    <p>No stubs yet. Create one to start mocking.</p>
+    <p>No stubs or groups yet. Create one to start mocking.</p>
 }
 else
 {
-    <table>
-        <thead>
-            <tr><th>Name</th><th>Method</th><th>Path</th><th>Enabled</th><th></th></tr>
-        </thead>
-        <tbody>
-            @foreach (var stub in _stubs)
-            {
-                <tr>
-                    <td>@stub.Name</td>
-                    <td>@stub.Request.Method</td>
-                    <td>@stub.Request.Path.Value</td>
-                    <td>
-                        <input type="checkbox" checked="@stub.Enabled"
-                               @onchange="@(e => ToggleAsync(stub, e))" />
-                    </td>
-                    <td>
-                        <button @onclick="@(() => Nav.NavigateTo($"/stubs/{stub.Id}"))">Edit</button>
-                        <button @onclick="@(() => DuplicateAsync(stub))">Duplicate</button>
-                        <button @onclick="@(() => DeleteAsync(stub))">Delete</button>
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
+    <GroupTreeView Node="_tree"
+                   PendingDeleteGroupId="_pendingDeleteGroupId"
+                   OnRequestDeleteGroup="RequestDeleteGroup"
+                   OnCancelDeleteGroup="CancelDeleteGroup"
+                   OnDeleteGroup="DeleteGroupAsync"
+                   OnEditStub="EditStub"
+                   OnDuplicateStub="DuplicateStubAsync"
+                   OnDeleteStub="DeleteStubAsync"
+                   OnToggleStub="ToggleStubAsync" />
 }
 
 @code {
-    private IReadOnlyList<Stub>? _stubs;
+    private GroupNode? _tree;
+    private string _newGroupName = "";
+    private Guid? _pendingDeleteGroupId;
 
     protected override Task OnInitializedAsync() => LoadAsync();
 
-    private async Task LoadAsync() => _stubs = await Service.ListAsync();
-
-    private async Task ToggleAsync(Stub stub, ChangeEventArgs e)
+    private async Task LoadAsync()
     {
-        await Service.SetEnabledAsync(stub.Id, (bool)e.Value!);
+        var groups = await Groups.ListAsync();
+        var stubs = await StubSvc.ListAsync();
+        _tree = GroupTree.Build(groups, stubs);
+    }
+
+    private async Task AddGroupAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_newGroupName)) return;
+        await Groups.CreateAsync(_newGroupName.Trim());
+        _newGroupName = "";
         await LoadAsync();
     }
 
-    private async Task DuplicateAsync(Stub stub)
+    private void RequestDeleteGroup(Group group) => _pendingDeleteGroupId = group.Id;
+
+    private void CancelDeleteGroup() => _pendingDeleteGroupId = null;
+
+    private async Task DeleteGroupAsync(Group group)
     {
-        await Service.DuplicateAsync(stub.Id);
+        await Groups.DeleteAsync(group.Id);
+        _pendingDeleteGroupId = null;
         await LoadAsync();
     }
 
-    private async Task DeleteAsync(Stub stub)
+    private void EditStub(Stub stub) => Nav.NavigateTo($"/stubs/{stub.Id}");
+
+    private async Task DuplicateStubAsync(Stub stub)
     {
-        await Service.DeleteAsync(stub.Id);
+        await StubSvc.DuplicateAsync(stub.Id);
+        await LoadAsync();
+    }
+
+    private async Task DeleteStubAsync(Stub stub)
+    {
+        await StubSvc.DeleteAsync(stub.Id);
+        await LoadAsync();
+    }
+
+    private async Task ToggleStubAsync((Stub Stub, bool Enabled) change)
+    {
+        await StubSvc.SetEnabledAsync(change.Stub.Id, change.Enabled);
         await LoadAsync();
     }
 }

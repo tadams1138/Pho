@@ -23,9 +23,14 @@ public sealed class PhoDbContext : DbContext
     }
 
     public DbSet<Stub> Stubs => Set<Stub>();
+    public DbSet<Group> Groups => Set<Group>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        var group = modelBuilder.Entity<Group>();
+        group.HasKey(g => g.Id);
+        group.Property(g => g.Name).IsRequired();
+
         var stub = modelBuilder.Entity<Stub>();
         stub.HasKey(s => s.Id);
         stub.Property(s => s.Name).IsRequired();
