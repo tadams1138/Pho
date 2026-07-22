@@ -30,6 +30,7 @@ builder.Services.AddScoped<IConfigHistoryStore, EfConfigHistoryStore>();
 var retentionHours = builder.Configuration.GetValue<double?>("Pho:ReceivedRequestRetentionHours") ?? 24;
 builder.Services.AddSingleton(new ReceivedRequestRetention { Value = TimeSpan.FromHours(retentionHours) });
 builder.Services.AddScoped<IReceivedRequestLog, EfReceivedRequestLog>();
+builder.Services.AddScoped<IConfigPorter, EfConfigPorter>();
 
 builder.Services.AddScoped<StubService>();
 builder.Services.AddScoped<GroupService>();
@@ -53,6 +54,15 @@ app.MapWhen(policy.IsMockTraffic, mockApp => mockApp.UseMiddleware<MockServingMi
 
 // Admin UI (Blazor) on the admin port.
 app.UseAntiforgery();
+
+// Full-set export download (F8).
+app.MapGet("/export", async (IConfigPorter porter, HttpContext ctx) =>
+{
+    var json = await porter.ExportJsonAsync();
+    ctx.Response.Headers.ContentDisposition = "attachment; filename=pho-mocks.json";
+    return Results.Text(json, "application/json");
+});
+
 app.MapRazorComponents<App>().AddInteractiveServerRenderMode();
 
 app.Run();

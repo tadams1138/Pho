@@ -54,6 +54,13 @@ internal sealed class FakeReceivedRequestLog : IReceivedRequestLog
     public Task ClearAsync() { Records.Clear(); return Task.CompletedTask; }
 }
 
+/// <summary>No-op config porter for admin-UI tests.</summary>
+internal sealed class FakeConfigPorter : IConfigPorter
+{
+    public Task<string> ExportJsonAsync() => Task.FromResult("""{"Stubs":[],"Groups":[]}""");
+    public Task ImportJsonAsync(string json, ImportMode mode) => Task.CompletedTask;
+}
+
 /// <summary>No-op config history store for admin-UI tests.</summary>
 internal sealed class FakeConfigHistoryStore : IConfigHistoryStore
 {

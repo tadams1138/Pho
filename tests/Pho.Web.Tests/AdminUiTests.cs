@@ -24,6 +24,7 @@ public class AdminUiTests
                 services.AddSingleton<IStubRepository>(new FakeStubRepository());
                 services.AddSingleton<IGroupRepository>(new FakeGroupRepository());
                 services.AddSingleton<IConfigHistoryStore>(new FakeConfigHistoryStore());
+                services.AddSingleton<IConfigPorter>(new FakeConfigPorter());
             });
         });
         return factory.CreateClient();

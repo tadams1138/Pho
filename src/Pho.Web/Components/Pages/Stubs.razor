@@ -3,6 +3,7 @@
 @inject StubService StubSvc
 @inject GroupService Groups
 @inject ConfigHistoryService History
+@inject IConfigPorter Porter
 @inject NavigationManager Nav
 
 <h1>Stubs</h1>
@@ -14,6 +15,22 @@
     <button @onclick="UndoAsync" disabled="@(!_canUndo)">Undo</button>
     <button @onclick="RedoAsync" disabled="@(!_canRedo)">Redo</button>
 </div>
+
+<div class="toolbar">
+    <a href="/export" target="_blank" rel="noopener">Export</a>
+    <label>Import mode
+        <select @bind="_importMode">
+            <option value="@ImportMode.ReplaceAll">Replace all</option>
+            <option value="@ImportMode.Merge">Merge</option>
+        </select>
+    </label>
+    <InputFile OnChange="OnImportAsync" accept=".json" />
+</div>
+
+@if (_importError is not null)
+{
+    <p style="color:#b00020">Import failed: @_importError</p>
+}
 
 @if (_tree is null)
 {
@@ -42,6 +59,8 @@ else
     private Guid? _pendingDeleteGroupId;
     private bool _canUndo;
     private bool _canRedo;
+    private ImportMode _importMode = ImportMode.ReplaceAll;
+    private string? _importError;
 
     protected override Task OnInitializedAsync() => LoadAsync();
 
@@ -111,5 +130,22 @@ else
     {
         await History.RedoAsync();
         await LoadAsync();
+    }
+
+    private async Task OnImportAsync(InputFileChangeEventArgs e)
+    {
+        try
+        {
+            using var reader = new StreamReader(e.File.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024));
+            var json = await reader.ReadToEndAsync();
+            await Porter.ImportJsonAsync(json, _importMode);
+            await History.RecordAsync($"Imported configuration ({_importMode})");
+            _importError = null;
+            await LoadAsync();
+        }
+        catch (Exception ex)
+        {
+            _importError = ex.Message;
+        }
     }
 }
