@@ -1,0 +1,15 @@
+services:
+  app:
+    build: .
+    image: pho
+    ports:
+      - "8080:8080"   # admin UI
+      - "8081:8081"   # mock-serving surface
+    environment:
+      - ConnectionStrings__Pho=Data Source=/data/pho.db
+    volumes:
+      - pho-data:/data
+    restart: unless-stopped
+
+volumes:
+  pho-data:

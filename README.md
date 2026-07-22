@@ -6,7 +6,7 @@ This project is **spec-first**: the authoritative specification lives in [`docs/
 
 ## Status
 
-Under construction. The specification is complete; the app is being built (.NET 10, ASP.NET Core + Blazor, EF Core/SQLite). `docker compose up` is not wired up yet — the Dockerfile/compose file land later in the build.
+The v1 feature set is implemented (.NET 10, ASP.NET Core + Blazor, EF Core/SQLite) and deployable via Docker Compose. See the spec in [`docs/spec/`](docs/spec/SPEC.md) for the full behavior.
 
 ## Tech stack
 
