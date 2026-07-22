@@ -28,8 +28,8 @@ cd Pho
 docker compose up -d      # builds and starts Pho
 ```
 
-- Admin UI: `http://localhost:8080` — create and manage mocks.
-- Mock-serving surface: `http://localhost:8081` — point the system under test here; it receives your configured responses (or 404 when nothing matches).
+- Admin UI: `http://localhost:8931` — create and manage mocks.
+- Mock-serving surface: `http://localhost:8932` — point the system under test here; it receives your configured responses (or 404 when nothing matches).
 
 The SQLite database is stored on a named Docker volume and persists across restarts.
 
@@ -51,7 +51,7 @@ dotnet test                          # run the full test suite
 dotnet run --project src/Pho.Web     # run the app
 ```
 
-- Admin UI: `http://localhost:8080` — create and manage mocks.
-- Mock-serving surface: `http://localhost:8081` — point the system under test here.
+- Admin UI: `http://localhost:8931` — create and manage mocks.
+- Mock-serving surface: `http://localhost:8932` — point the system under test here.
 
 The SQLite database (`pho.db`) is created on first run in the working directory.

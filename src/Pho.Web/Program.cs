@@ -6,10 +6,10 @@ using Pho.Web.Components;
 
 var builder = WebApplication.CreateBuilder(args);
 
-var adminPort = builder.Configuration.GetValue<int?>("Pho:AdminPort") ?? 8080;
-var mockPort = builder.Configuration.GetValue<int?>("Pho:MockPort") ?? 8081;
+var adminPort = builder.Configuration.GetValue<int?>("Pho:AdminPort") ?? 8931;
+var mockPort = builder.Configuration.GetValue<int?>("Pho:MockPort") ?? 8932;
 
-// Two ports: admin UI (8080) and mock-serving surface (8081). Skipped under Testing,
+// Two ports: admin UI (8931) and mock-serving surface (8932). Skipped under Testing,
 // where the in-memory TestServer has no real sockets.
 if (!builder.Environment.IsEnvironment("Testing"))
 {

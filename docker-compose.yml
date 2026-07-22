@@ -3,8 +3,8 @@ services:
     build: .
     image: pho
     ports:
-      - "8080:8080"   # admin UI
-      - "8081:8081"   # mock-serving surface
+      - "8931:8931"   # admin UI
+      - "8932:8932"   # mock-serving surface
     environment:
       - ConnectionStrings__Pho=Data Source=/data/pho.db
     volumes:

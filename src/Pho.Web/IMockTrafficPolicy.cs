@@ -3,8 +3,8 @@ using Microsoft.AspNetCore.Http;
 namespace Pho.Web;
 
 /// <summary>
-/// Decides whether an inbound request belongs to the mock-serving surface (port 8081) or the
-/// admin UI (port 8080). Abstracted so tests can force either side without real sockets.
+/// Decides whether an inbound request belongs to the mock-serving surface (port 8932) or the
+/// admin UI (port 8931). Abstracted so tests can force either side without real sockets.
 /// </summary>
 public interface IMockTrafficPolicy
 {

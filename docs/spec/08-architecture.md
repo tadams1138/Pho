@@ -24,8 +24,8 @@ Requirements the stack must satisfy:
 
 A core constraint (see `06-interfaces.md`): the **mock-serving surface** must be separable from the **admin UI**, so a stub for an arbitrary path cannot collide with the app's own routes. **Decision: two ports.** The app listens on:
 
-- **Admin port** (default `8080`) — the Blazor UI and its supporting endpoints.
-- **Mock port** (default `8081`) — the mock-serving surface; the system under test points here. It treats *every* request on this port as mock traffic (matched against stubs, else 404), so it never collides with UI routes.
+- **Admin port** (default `8931`) — the Blazor UI and its supporting endpoints.
+- **Mock port** (default `8932`) — the mock-serving surface; the system under test points here. It treats *every* request on this port as mock traffic (matched against stubs, else 404), so it never collides with UI routes.
 
 Both ports are configurable. Kestrel listens on both; middleware branches by port.
 

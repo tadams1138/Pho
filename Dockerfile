@@ -19,12 +19,12 @@ COPY --from=build /app .
 
 # Let the app's Kestrel config bind both ports (avoid the base image's default URL).
 ENV ASPNETCORE_URLS=""
-ENV Pho__AdminPort=8080
-ENV Pho__MockPort=8081
+ENV Pho__AdminPort=8931
+ENV Pho__MockPort=8932
 ENV ConnectionStrings__Pho="Data Source=/data/pho.db"
 
-EXPOSE 8080
-EXPOSE 8081
+EXPOSE 8931
+EXPOSE 8932
 VOLUME /data
 
 ENTRYPOINT ["dotnet", "Pho.Web.dll"]

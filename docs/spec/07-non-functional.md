@@ -3,7 +3,7 @@
 ## Deployment
 
 - Pho **must be deployable via Docker Compose** (`docker compose up`). With SQLite the application is a **single service** (no separate database container); see [`08-architecture.md`](08-architecture.md) for the topology and the README for user-facing steps.
-- The application exposes two ports: the **admin UI** (default 8080) and the **mock-serving surface** (default 8081).
+- The application exposes two ports: the **admin UI** (default 8931) and the **mock-serving surface** (default 8932).
 - The SQLite database file lives on a named Docker volume so data survives container restarts and `docker compose down` (without `-v`).
 
 ## Persistence

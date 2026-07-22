@@ -30,7 +30,7 @@ Solution file is `Pho.slnx` (the .NET 10 XML solution format); the arg-less comm
 
 ## Architecture notes
 
-- **Two ports:** admin UI on 8080, mock-serving surface on 8081 (configurable). Middleware branches by port; the mock port treats every request as mock traffic. See `docs/spec/08-architecture.md`.
+- **Two ports:** admin UI on 8931, mock-serving surface on 8932 (configurable). Middleware branches by port; the mock port treats every request as mock traffic. See `docs/spec/08-architecture.md`.
 - **No public authoring API** in v1 — Blazor components call in-process services directly. Only the mock-serving surface is a public HTTP surface.
 - **Stubs have no priority.** Multiple enabled stubs matching one request is an error (HTTP 500 + logged + flagged in UI), not resolved by ranking.
 - **History is whole-configuration** (`ConfigRevision`), not per-stub; this is what makes cascade-delete-undo work. See `docs/spec/03-domain-model.md`.
