@@ -26,6 +26,11 @@ builder.Services.AddScoped<IStubStore, EfStubStore>();
 builder.Services.AddScoped<IStubRepository, EfStubRepository>();
 builder.Services.AddScoped<IGroupRepository, EfGroupRepository>();
 builder.Services.AddScoped<IConfigHistoryStore, EfConfigHistoryStore>();
+
+var retentionHours = builder.Configuration.GetValue<double?>("Pho:ReceivedRequestRetentionHours") ?? 24;
+builder.Services.AddSingleton(new ReceivedRequestRetention { Value = TimeSpan.FromHours(retentionHours) });
+builder.Services.AddScoped<IReceivedRequestLog, EfReceivedRequestLog>();
+
 builder.Services.AddScoped<StubService>();
 builder.Services.AddScoped<GroupService>();
 builder.Services.AddScoped<ConfigHistoryService>();

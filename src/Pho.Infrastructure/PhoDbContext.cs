@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
@@ -26,6 +28,7 @@ public sealed class PhoDbContext : DbContext
     public DbSet<Group> Groups => Set<Group>();
     public DbSet<ConfigRevisionRecord> ConfigRevisions => Set<ConfigRevisionRecord>();
     public DbSet<HistoryState> HistoryState => Set<HistoryState>();
+    public DbSet<ReceivedRequest> ReceivedRequests => Set<ReceivedRequest>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -54,7 +57,28 @@ public sealed class PhoDbContext : DbContext
                 v => JsonSerializer.Serialize(v, JsonOptions),
                 v => JsonSerializer.Deserialize<ResponseDefinition>(v, JsonOptions)!)
             .Metadata.SetValueComparer(RecordComparer<ResponseDefinition>());
+
+        var received = modelBuilder.Entity<ReceivedRequest>();
+        received.HasKey(r => r.Id);
+        received.HasIndex(r => r.ReceivedAt);
+        received.Property(r => r.Headers)
+            .HasConversion(
+                v => JsonSerializer.Serialize(v, JsonOptions),
+                v => JsonSerializer.Deserialize<Dictionary<string, string?>>(v, JsonOptions)!)
+            .Metadata.SetValueComparer(JsonComparer<IReadOnlyDictionary<string, string?>>());
+        received.Property(r => r.MatchedStubIds)
+            .HasConversion(
+                v => JsonSerializer.Serialize(v, JsonOptions),
+                v => JsonSerializer.Deserialize<List<Guid>>(v, JsonOptions)!)
+            .Metadata.SetValueComparer(JsonComparer<IReadOnlyList<Guid>>());
     }
+
+    // JSON-value equality for converted collection members (these records are insert-only).
+    private static ValueComparer<T> JsonComparer<T>() where T : class
+        => new(
+            (a, b) => JsonSerializer.Serialize(a, JsonOptions) == JsonSerializer.Serialize(b, JsonOptions),
+            v => v == null ? 0 : JsonSerializer.Serialize(v, JsonOptions).GetHashCode(),
+            v => v);
 
     // The JSON-backed members are immutable records with value equality; compare by value,
     // and snapshot by identity since they are never mutated in place.

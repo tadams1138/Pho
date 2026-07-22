@@ -38,6 +38,22 @@ internal sealed class FakeStubRepository : IStubRepository
     public Task DeleteAsync(Guid id) { _stubs.Remove(id); return Task.CompletedTask; }
 }
 
+/// <summary>In-memory received-request log for mock-serving tests.</summary>
+internal sealed class FakeReceivedRequestLog : IReceivedRequestLog
+{
+    public List<ReceivedRequest> Records { get; } = new();
+
+    public Task RecordAsync(ReceivedRequest request) { Records.Add(request); return Task.CompletedTask; }
+
+    public Task<PagedResult<ReceivedRequest>> QueryAsync(string? method, string? pathContains, int page, int pageSize)
+    {
+        var items = Records.OrderByDescending(r => r.ReceivedAt).ToList();
+        return Task.FromResult(new PagedResult<ReceivedRequest>(items, items.Count, page, pageSize));
+    }
+
+    public Task ClearAsync() { Records.Clear(); return Task.CompletedTask; }
+}
+
 /// <summary>No-op config history store for admin-UI tests.</summary>
 internal sealed class FakeConfigHistoryStore : IConfigHistoryStore
 {

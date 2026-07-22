@@ -7,15 +7,15 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Pho.Domain;
-using Pho.Web;
 using Xunit;
 
 namespace Pho.Web.Tests;
 
 public class MockServingTests
 {
-    private static HttpClient ClientWith(params Stub[] stubs)
+    private static (HttpClient Client, FakeReceivedRequestLog Log) Build(params Stub[] stubs)
     {
+        var log = new FakeReceivedRequestLog();
         var factory = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
         {
             builder.UseEnvironment("Testing");
@@ -23,10 +23,13 @@ public class MockServingTests
             {
                 services.AddSingleton<IStubStore>(new InMemoryStubStore(stubs));
                 services.AddSingleton<IMockTrafficPolicy, AlwaysMockTrafficPolicy>();
+                services.AddSingleton<IReceivedRequestLog>(log);
             });
         });
-        return factory.CreateClient();
+        return (factory.CreateClient(), log);
     }
+
+    private static HttpClient ClientWith(params Stub[] stubs) => Build(stubs).Client;
 
     private static Stub GetStub(string path, int status, string body, bool enabled = true, string name = "s")
         => new()
@@ -72,5 +75,18 @@ public class MockServingTests
         var response = await client.GetAsync("/dup");
 
         response.StatusCode.Should().Be(HttpStatusCode.InternalServerError);
+    }
+
+    [Fact]
+    public async Task Every_request_is_recorded_with_its_outcome()
+    {
+        var (client, log) = Build(GetStub("/hello", 200, "world"));
+
+        await client.GetAsync("/hello");
+        await client.GetAsync("/missing");
+
+        log.Records.Should().HaveCount(2);
+        log.Records.Should().ContainSingle(r => r.Path == "/hello" && r.Outcome == MatchOutcome.MatchedOne);
+        log.Records.Should().ContainSingle(r => r.Path == "/missing" && r.Outcome == MatchOutcome.NoMatch);
     }
 }

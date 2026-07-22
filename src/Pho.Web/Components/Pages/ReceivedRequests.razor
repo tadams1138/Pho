@@ -1,0 +1,140 @@
+@page "/received"
+@rendermode InteractiveServer
+@inject IReceivedRequestLog Log
+
+<h1>Received requests</h1>
+
+<div class="toolbar">
+    <input type="text" placeholder="Method (e.g. GET)" @bind="_method" @bind:event="oninput" />
+    <input type="text" placeholder="Path contains…" @bind="_pathFilter" @bind:event="oninput" />
+    <button @onclick="ApplyFilterAsync">Filter</button>
+    <label>Page size
+        <select @bind="_pageSize" @bind:after="ResetToFirstPageAsync">
+            <option value="10">10</option>
+            <option value="20">20</option>
+            <option value="50">50</option>
+            <option value="100">100</option>
+        </select>
+    </label>
+    <button @onclick="ClearAsync">Clear log</button>
+</div>
+
+@if (_result is null)
+{
+    <p>Loading…</p>
+}
+else if (_result.TotalCount == 0)
+{
+    <p>No received requests.</p>
+}
+else
+{
+    <p>@_result.TotalCount total — page @_result.Page of @TotalPages</p>
+    <table>
+        <thead>
+            <tr><th>Received (UTC)</th><th>Method</th><th>Path</th><th>Outcome</th><th>Status</th><th></th></tr>
+        </thead>
+        <tbody>
+            @foreach (var r in _result.Items)
+            {
+                <tr>
+                    <td>@r.ReceivedAt.ToString("u")</td>
+                    <td>@r.Method</td>
+                    <td>@r.Path</td>
+                    <td>@Describe(r)</td>
+                    <td>@r.ResponseStatus</td>
+                    <td><button @onclick="() => Toggle(r.Id)">@(_expanded == r.Id ? "Hide" : "Details")</button></td>
+                </tr>
+                @if (_expanded == r.Id)
+                {
+                    <tr>
+                        <td colspan="6">
+                            <div class="detail">
+                                <strong>Query:</strong> <code>@(string.IsNullOrEmpty(r.Query) ? "(none)" : r.Query)</code>
+                                <strong>Headers:</strong>
+                                <ul>
+                                    @foreach (var h in r.Headers)
+                                    {
+                                        <li><code>@h.Key: @h.Value</code></li>
+                                    }
+                                </ul>
+                                <strong>Body:</strong>
+                                <pre>@(string.IsNullOrEmpty(r.Body) ? "(empty)" : r.Body)</pre>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+    <div class="toolbar">
+        <button @onclick="PrevPageAsync" disabled="@(_page <= 1)">Previous</button>
+        <button @onclick="NextPageAsync" disabled="@(_page >= TotalPages)">Next</button>
+    </div>
+}
+
+@code {
+    private PagedResult<ReceivedRequest>? _result;
+    private string _method = "";
+    private string _pathFilter = "";
+    private int _pageSize = 20;
+    private int _page = 1;
+    private Guid? _expanded;
+
+    private int TotalPages => _result is null || _result.TotalCount == 0
+        ? 1
+        : (_result.TotalCount + _pageSize - 1) / _pageSize;
+
+    protected override Task OnInitializedAsync() => LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        _result = await Log.QueryAsync(
+            string.IsNullOrWhiteSpace(_method) ? null : _method.Trim(),
+            string.IsNullOrWhiteSpace(_pathFilter) ? null : _pathFilter.Trim(),
+            _page,
+            _pageSize);
+    }
+
+    private async Task ApplyFilterAsync()
+    {
+        _page = 1;
+        await LoadAsync();
+    }
+
+    private Task ResetToFirstPageAsync()
+    {
+        _page = 1;
+        return LoadAsync();
+    }
+
+    private async Task ClearAsync()
+    {
+        await Log.ClearAsync();
+        _page = 1;
+        await LoadAsync();
+    }
+
+    private async Task PrevPageAsync()
+    {
+        if (_page <= 1) return;
+        _page--;
+        await LoadAsync();
+    }
+
+    private async Task NextPageAsync()
+    {
+        if (_page >= TotalPages) return;
+        _page++;
+        await LoadAsync();
+    }
+
+    private void Toggle(Guid id) => _expanded = _expanded == id ? null : id;
+
+    private static string Describe(ReceivedRequest r) => r.Outcome switch
+    {
+        MatchOutcome.MatchedOne => "matched",
+        MatchOutcome.Ambiguous => $"AMBIGUOUS ({r.MatchedStubIds.Count} stubs)",
+        _ => "no match"
+    };
+}
