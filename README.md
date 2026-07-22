@@ -44,4 +44,14 @@ Mock definitions can be **exported to a JSON file** from the web UI for backup, 
 
 ## Local development
 
-_TODO: local dev commands (run the app, run tests, lint/format, run a single test) once the stack is chosen — see [`docs/spec/08-architecture.md`](docs/spec/08-architecture.md)._
+Requires the .NET 10 SDK.
+
+```bash
+dotnet test                          # run the full test suite
+dotnet run --project src/Pho.Web     # run the app
+```
+
+- Admin UI: `http://localhost:8080` — create and manage mocks.
+- Mock-serving surface: `http://localhost:8081` — point the system under test here.
+
+The SQLite database (`pho.db`) is created on first run in the working directory.
