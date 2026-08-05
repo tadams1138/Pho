@@ -3,8 +3,9 @@ services:
     build: .
     image: pho
     ports:
-      - "8931:8931"   # admin UI
-      - "8932:8932"   # mock-serving surface
+      # Host port is configurable (install.sh writes .env); container ports stay 8931/8932.
+      - "${PHO_ADMIN_PORT:-8931}:8931"   # admin UI
+      - "${PHO_MOCK_PORT:-8932}:8932"    # mock-serving surface
     environment:
       - ConnectionStrings__Pho=Data Source=/data/pho.db
     volumes:

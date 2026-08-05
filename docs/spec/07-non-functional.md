@@ -3,7 +3,8 @@
 ## Deployment
 
 - Pho **must be deployable via Docker Compose** (`docker compose up`). With SQLite the application is a **single service** (no separate database container); see [`08-architecture.md`](08-architecture.md) for the topology and the README for user-facing steps.
-- The application exposes two ports: the **admin UI** (default 8931) and the **mock-serving surface** (default 8932).
+- A Linux **install script** (`install.sh`) provides one-command setup: it prompts for the admin and mock **host** ports (defaulting to 8931 / 8932 when the user presses Enter), clones the repo if needed, writes a `.env`, and runs `docker compose up -d --build`. The README documents a copy-paste `bash <(curl …)` invocation.
+- The application exposes two ports: the **admin UI** (default 8931) and the **mock-serving surface** (default 8932). The **host** port mappings are configurable via `PHO_ADMIN_PORT` / `PHO_MOCK_PORT` (read from `.env` by Compose); the container-internal ports remain 8931 / 8932.
 - The SQLite database file lives on a named Docker volume so data survives container restarts and `docker compose down` (without `-v`).
 
 ## Persistence

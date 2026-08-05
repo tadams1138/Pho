@@ -20,16 +20,35 @@ Pho deploys as a **single container** (SQLite is in-process — no separate data
 
 - Docker Engine 24+ with the Compose plugin (verify with `docker compose version`)
 
-### Install and run
+### Quick install (one command)
+
+On any Linux machine with Docker, run:
+
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/tadams1138/Pho/main/install.sh)
+```
+
+The installer asks which **admin** and **mock** ports to use — press **[Enter]** to accept the defaults (8931 / 8932) — then clones the repo, builds the image, and starts Pho with Docker Compose.
+
+### Manual install
 
 ```bash
 git clone https://github.com/tadams1138/Pho.git
 cd Pho
-docker compose up -d      # builds and starts Pho
+./install.sh              # prompts for ports, then builds and starts
+# — or, to use the default ports without prompts —
+docker compose up -d      # builds and starts Pho on 8931 / 8932
 ```
 
 - Admin UI: `http://localhost:8931` — create and manage mocks.
 - Mock-serving surface: `http://localhost:8932` — point the system under test here; it receives your configured responses (or 404 when nothing matches).
+
+To run on different ports without the installer, set them in a `.env` file next to `docker-compose.yml`:
+
+```bash
+echo -e "PHO_ADMIN_PORT=18931\nPHO_MOCK_PORT=18932" > .env
+docker compose up -d
+```
 
 The SQLite database is stored on a named Docker volume and persists across restarts.
 

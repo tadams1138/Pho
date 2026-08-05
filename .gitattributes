@@ -1,0 +1,7 @@
+# Shell scripts must use LF so they run on Linux even when authored on Windows.
+*.sh text eol=lf
+install.sh text eol=lf
+
+# Dockerfiles and compose files: LF for portability.
+Dockerfile text eol=lf
+docker-compose.yml text eol=lf
