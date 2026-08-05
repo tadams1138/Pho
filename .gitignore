@@ -13,6 +13,9 @@ CLAUDE.local.md
 *.db-shm
 *.db-wal
 
+# Local deployment config written by install.sh (host port overrides)
+.env
+
 # OS / editor
 .DS_Store
 Thumbs.db

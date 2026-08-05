@@ -63,12 +63,25 @@ fi
 # `docker compose --build` needs the full source tree, not just the compose
 # file. Prefer git if present; otherwise download a source tarball with
 # curl/wget + tar, so git is not required.
+#
+# Safe to re-run: an existing checkout is updated in place rather than
+# re-cloned (a bare `git clone` into an existing directory would error).
 if [ ! -f docker-compose.yml ]; then
   if command -v git >/dev/null 2>&1; then
-    echo "Cloning Pho into ./Pho ..."
-    git clone --depth 1 "$REPO_URL" Pho
+    if [ -d Pho/.git ]; then
+      echo "Updating existing Pho checkout ..."
+      git -C Pho fetch --depth 1 origin main
+      git -C Pho reset --hard FETCH_HEAD
+    elif [ -e Pho ]; then
+      echo "Error: ./Pho exists but is not a git checkout. Remove it, or run this from inside it." >&2
+      exit 1
+    else
+      echo "Cloning Pho into ./Pho ..."
+      git clone --depth 1 "$REPO_URL" Pho
+    fi
     cd Pho
   elif command -v tar >/dev/null 2>&1 && { command -v curl >/dev/null 2>&1 || command -v wget >/dev/null 2>&1; }; then
+    # tar overwrites in place, so re-extracting over an existing copy is fine.
     echo "git not found; downloading the Pho source tarball ..."
     if command -v curl >/dev/null 2>&1; then
       curl -fsSL "$TARBALL_URL" | tar -xz
