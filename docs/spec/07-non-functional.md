@@ -18,8 +18,7 @@
 
 ## Performance
 
-- The mock-serving surface is on the hot path of others' test suites; response latency should be low and predictable under typical stub counts.
-  > **Open question:** concrete latency/throughput targets are not yet set.
+- The mock-serving surface is on the hot path of others' test suites; response latency should be **low and predictable** under typical stub counts. **Decided:** v1 sets no concrete numeric latency/throughput target — "low and predictable" is the qualitative goal; specific SLOs may be added in a later iteration if a need arises.
 
 ## Security
 
@@ -29,7 +28,7 @@
 ## Observability
 
 - Application logging sufficient to diagnose match failures and errors.
-  > **Open question:** metrics/health endpoints for the container (e.g. a `/health` check for Compose) — likely needed for the Compose healthcheck; confirm with the stack decision.
+- **Health endpoint (decided):** the app exposes `GET /health` on the **admin port** (returns `200 Healthy`). The Docker Compose `app` service uses it as its `healthcheck` (curl against `http://localhost:8931/health`). No broader metrics surface is included in v1.
 
 ## Configuration settings
 

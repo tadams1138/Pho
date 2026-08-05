@@ -15,6 +15,12 @@ RUN dotnet publish src/Pho.Web/Pho.Web.csproj -c Release -o /app --no-restore
 # Runtime
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 WORKDIR /app
+
+# curl is used only by the Docker Compose healthcheck against /health.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY --from=build /app .
 
 # Let the app's Kestrel config bind both ports (avoid the base image's default URL).

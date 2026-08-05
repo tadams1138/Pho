@@ -41,4 +41,15 @@ public class AdminUiTests
         var html = await response.Content.ReadAsStringAsync();
         html.Should().Contain("Stubs");
     }
+
+    [Fact]
+    public async Task Health_endpoint_reports_healthy()
+    {
+        var client = AdminClient();
+
+        var response = await client.GetAsync("/health");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        (await response.Content.ReadAsStringAsync()).Should().Be("Healthy");
+    }
 }

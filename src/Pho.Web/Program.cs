@@ -37,6 +37,8 @@ builder.Services.AddScoped<GroupService>();
 builder.Services.AddScoped<ConfigHistoryService>();
 builder.Services.AddSingleton<IMockTrafficPolicy>(new PortMockTrafficPolicy(mockPort));
 
+builder.Services.AddHealthChecks();
+
 builder.Services.AddRazorComponents().AddInteractiveServerComponents();
 
 var app = builder.Build();
@@ -54,6 +56,9 @@ app.MapWhen(policy.IsMockTraffic, mockApp => mockApp.UseMiddleware<MockServingMi
 
 // Admin UI (Blazor) on the admin port.
 app.UseAntiforgery();
+
+// Liveness endpoint for the Docker Compose healthcheck (admin port).
+app.MapHealthChecks("/health");
 
 // Full-set export download (F8).
 app.MapGet("/export", async (IConfigPorter porter, HttpContext ctx) =>

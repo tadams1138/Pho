@@ -33,7 +33,7 @@ Both ports are configurable. Kestrel listens on both; middleware branches by por
 
 With SQLite there is a **single service**:
 
-- **`app`** — the Pho application (Blazor UI + mock-serving surface). Builds from a `Dockerfile`. Publishes the admin and mock ports. Persists the SQLite database file to a **named volume** so mock definitions survive restarts. A healthcheck on the admin port supports orchestration.
+- **`app`** — the Pho application (Blazor UI + mock-serving surface). Builds from a `Dockerfile`. Publishes the admin and mock ports. Persists the SQLite database file to a **named volume** so mock definitions survive restarts. A Compose `healthcheck` probes `GET /health` on the admin port (`curl -fsS http://localhost:8931/health`) for orchestration.
 
 No separate database container is needed (SQLite is in-process). Concrete image, ports, env vars, and volume name are defined in `docker-compose.yml` during implementation.
 
