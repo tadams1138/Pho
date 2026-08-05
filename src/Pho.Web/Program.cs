@@ -55,6 +55,10 @@ var policy = app.Services.GetRequiredService<IMockTrafficPolicy>();
 app.MapWhen(policy.IsMockTraffic, mockApp => mockApp.UseMiddleware<MockServingMiddleware>());
 
 // Admin UI (Blazor) on the admin port.
+// Serve the Blazor framework files and static web assets (incl. _framework/blazor.web.js);
+// without this the admin UI renders once server-side but never boots interactivity.
+app.MapStaticAssets();
+
 app.UseAntiforgery();
 
 // Liveness endpoint for the Docker Compose healthcheck (admin port).

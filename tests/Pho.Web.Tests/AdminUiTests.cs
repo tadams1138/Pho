@@ -43,6 +43,16 @@ public class AdminUiTests
     }
 
     [Fact]
+    public async Task Blazor_script_is_served()
+    {
+        var client = AdminClient();
+
+        var response = await client.GetAsync("/_framework/blazor.web.js");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
+    [Fact]
     public async Task Health_endpoint_reports_healthy()
     {
         var client = AdminClient();
