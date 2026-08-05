@@ -1,3 +1,7 @@
+# Compose file format 3.7 is the highest supported by docker-compose v1.24.1,
+# so the same file works with both legacy `docker-compose` and modern `docker compose`.
+version: "3.7"
+
 services:
   app:
     build: .

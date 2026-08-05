@@ -22,10 +22,17 @@ if ! command -v docker >/dev/null 2>&1; then
   echo "Install Docker Engine first: https://docs.docker.com/engine/install/" >&2
   exit 1
 fi
-if ! docker compose version >/dev/null 2>&1; then
-  echo "Error: the Docker Compose v2 plugin is required ('docker compose')." >&2
+# Prefer Compose v2 ('docker compose'); fall back to legacy v1 ('docker-compose',
+# e.g. 1.24.1) so existing servers don't need upgrading.
+if docker compose version >/dev/null 2>&1; then
+  COMPOSE="docker compose"
+elif command -v docker-compose >/dev/null 2>&1; then
+  COMPOSE="docker-compose"
+else
+  echo "Error: Docker Compose is required (either 'docker compose' v2 or 'docker-compose' v1)." >&2
   exit 1
 fi
+echo "Using: $COMPOSE"
 
 # --- Port prompts (press [Enter] for the default) -------------------------
 prompt_port() {
@@ -69,7 +76,7 @@ EOF
 
 # --- Build and start ------------------------------------------------------
 echo "Building and starting Pho ..."
-docker compose up -d --build
+$COMPOSE up -d --build
 
 cat <<EOF
 
@@ -78,7 +85,7 @@ Pho is running:
   Mock surface:   http://localhost:${MOCK_PORT}
 
 Manage it from this directory:
-  docker compose logs -f     # follow logs
-  docker compose down        # stop (keeps the data volume)
-  docker compose down -v     # stop and delete all mock data
+  $COMPOSE logs -f     # follow logs
+  $COMPOSE down        # stop (keeps the data volume)
+  $COMPOSE down -v     # stop and delete all mock data
 EOF

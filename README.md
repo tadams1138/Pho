@@ -18,7 +18,11 @@ Pho deploys as a **single container** (SQLite is in-process — no separate data
 
 ### Prerequisites
 
-- Docker Engine 24+ with the Compose plugin (verify with `docker compose version`)
+- Docker Engine, plus either flavor of Docker Compose:
+  - **Compose v2** — `docker compose` (verify with `docker compose version`), or
+  - **Compose v1** — `docker-compose` **1.24.1 or newer** (verify with `docker-compose version`).
+
+The compose file uses format `3.7`, which both support, so no server upgrade is required. The commands below use `docker compose` (v2); on older servers just substitute `docker-compose` (with a hyphen). The `install.sh` script auto-detects whichever you have.
 
 ### Quick install (one command)
 
