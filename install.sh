@@ -11,6 +11,8 @@
 set -euo pipefail
 
 REPO_URL="https://github.com/tadams1138/Pho.git"
+TARBALL_URL="https://github.com/tadams1138/Pho/archive/refs/heads/main.tar.gz"
+TARBALL_DIR="Pho-main"   # the top-level folder GitHub's tarball extracts to
 DEFAULT_ADMIN_PORT=8931
 DEFAULT_MOCK_PORT=8932
 
@@ -57,15 +59,27 @@ if [ "$ADMIN_PORT" = "$MOCK_PORT" ]; then
   exit 1
 fi
 
-# --- Obtain the project (clone if not already inside it) ------------------
+# --- Obtain the project (only if not already inside a checkout) -----------
+# `docker compose --build` needs the full source tree, not just the compose
+# file. Prefer git if present; otherwise download a source tarball with
+# curl/wget + tar, so git is not required.
 if [ ! -f docker-compose.yml ]; then
-  if ! command -v git >/dev/null 2>&1; then
-    echo "Error: git is required to fetch Pho but was not found." >&2
+  if command -v git >/dev/null 2>&1; then
+    echo "Cloning Pho into ./Pho ..."
+    git clone --depth 1 "$REPO_URL" Pho
+    cd Pho
+  elif command -v tar >/dev/null 2>&1 && { command -v curl >/dev/null 2>&1 || command -v wget >/dev/null 2>&1; }; then
+    echo "git not found; downloading the Pho source tarball ..."
+    if command -v curl >/dev/null 2>&1; then
+      curl -fsSL "$TARBALL_URL" | tar -xz
+    else
+      wget -qO- "$TARBALL_URL" | tar -xz
+    fi
+    cd "$TARBALL_DIR"
+  else
+    echo "Error: need either git, or tar plus curl/wget, to download Pho." >&2
     exit 1
   fi
-  echo "Cloning Pho into ./Pho ..."
-  git clone --depth 1 "$REPO_URL" Pho
-  cd Pho
 fi
 
 # --- Configure host ports for Compose -------------------------------------

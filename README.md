@@ -32,9 +32,11 @@ On any Linux machine with Docker, run:
 bash <(curl -fsSL https://raw.githubusercontent.com/tadams1138/Pho/main/install.sh)
 ```
 
-The installer asks which **admin** and **mock** ports to use — press **[Enter]** to accept the defaults (8931 / 8932) — then clones the repo, builds the image, and starts Pho with Docker Compose.
+The installer asks which **admin** and **mock** ports to use — press **[Enter]** to accept the defaults (8931 / 8932) — then downloads the source, builds the image, and starts Pho with Docker Compose. **git is not required**: if it isn't installed, the script fetches a source tarball with `curl`/`wget` + `tar` instead.
 
 ### Manual install
+
+With git:
 
 ```bash
 git clone https://github.com/tadams1138/Pho.git
@@ -42,6 +44,14 @@ cd Pho
 ./install.sh              # prompts for ports, then builds and starts
 # — or, to use the default ports without prompts —
 docker compose up -d      # builds and starts Pho on 8931 / 8932
+```
+
+Without git (download and extract the source):
+
+```bash
+curl -fsSL https://github.com/tadams1138/Pho/archive/refs/heads/main.tar.gz | tar -xz
+cd Pho-main
+./install.sh
 ```
 
 - Admin UI: `http://localhost:8931` — create and manage mocks.
