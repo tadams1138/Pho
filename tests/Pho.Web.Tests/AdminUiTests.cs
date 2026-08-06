@@ -19,6 +19,9 @@ public class AdminUiTests
         var factory = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
         {
             builder.UseEnvironment("Testing");
+            // Static web assets only auto-load in Development; load them here so
+            // UseStaticFiles can serve _framework/blazor.web.js under Testing.
+            builder.UseStaticWebAssets();
             builder.ConfigureServices(services =>
             {
                 services.AddSingleton<IStubRepository>(new FakeStubRepository());
@@ -43,13 +46,15 @@ public class AdminUiTests
     }
 
     [Fact]
-    public async Task Blazor_script_is_served()
+    public async Task Blazor_script_is_served_with_a_real_body()
     {
         var client = AdminClient();
 
         var response = await client.GetAsync("/_framework/blazor.web.js");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var body = await response.Content.ReadAsByteArrayAsync();
+        body.Length.Should().BeGreaterThan(1000, "blazor.web.js must be delivered with its real content, not an empty 200");
     }
 
     [Fact]

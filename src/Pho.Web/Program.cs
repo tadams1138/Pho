@@ -57,7 +57,10 @@ app.MapWhen(policy.IsMockTraffic, mockApp => mockApp.UseMiddleware<MockServingMi
 // Admin UI (Blazor) on the admin port.
 // Serve the Blazor framework files and static web assets (incl. _framework/blazor.web.js);
 // without this the admin UI renders once server-side but never boots interactivity.
-app.MapStaticAssets();
+// UseStaticFiles (middleware) is used rather than MapStaticAssets: in this two-port
+// setup the endpoint-based MapStaticAssets returned empty (Content-Length: 0) bodies
+// for _framework/blazor.web.js in a published build.
+app.UseStaticFiles();
 
 app.UseAntiforgery();
 
