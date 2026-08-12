@@ -8,9 +8,14 @@ COPY src/Pho.Infrastructure/Pho.Infrastructure.csproj src/Pho.Infrastructure/
 COPY src/Pho.Web/Pho.Web.csproj src/Pho.Web/
 RUN dotnet restore src/Pho.Web/Pho.Web.csproj
 
-# Publish
+# Publish.
+# NOTE: do NOT pass --no-restore here. The restore above runs with only the .csproj
+# files present (for layer caching); publishing --no-restore against that state makes the
+# static-web-assets pipeline emit an EMPTY manifest with no wwwroot, so _framework/blazor.web.js
+# is never published and the admin UI 404s / never boots. Letting publish restore again (packages
+# are already cached in this layer) regenerates the assets correctly.
 COPY . .
-RUN dotnet publish src/Pho.Web/Pho.Web.csproj -c Release -o /app --no-restore
+RUN dotnet publish src/Pho.Web/Pho.Web.csproj -c Release -o /app
 
 # Runtime
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime

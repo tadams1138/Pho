@@ -55,11 +55,10 @@ var policy = app.Services.GetRequiredService<IMockTrafficPolicy>();
 app.MapWhen(policy.IsMockTraffic, mockApp => mockApp.UseMiddleware<MockServingMiddleware>());
 
 // Admin UI (Blazor) on the admin port.
-// Serve the Blazor framework files and static web assets (incl. _framework/blazor.web.js);
-// without this the admin UI renders once server-side but never boots interactivity.
-// UseStaticFiles (middleware) is used rather than MapStaticAssets: in this two-port
-// setup the endpoint-based MapStaticAssets returned empty (Content-Length: 0) bodies
-// for _framework/blazor.web.js in a published build.
+// Serve the static web assets (incl. _framework/blazor.web.js) from wwwroot; without this the
+// admin UI renders once server-side but never boots interactivity. This relies on the publish
+// output actually containing wwwroot/_framework — see the Dockerfile note about NOT using
+// `dotnet publish --no-restore`, which otherwise emits an empty asset manifest and no wwwroot.
 app.UseStaticFiles();
 
 app.UseAntiforgery();

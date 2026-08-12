@@ -37,6 +37,11 @@ With SQLite there is a **single service**:
 
 No separate database container is needed (SQLite is in-process). Concrete image, ports, env vars, and volume name are defined in `docker-compose.yml` during implementation.
 
+**Static web assets / the Blazor script (`_framework/blazor.web.js`).** The admin UI is only interactive if this script is published and served. Two build details are load-bearing:
+
+- The `Dockerfile` restores with only the `.csproj` files present (for layer caching), then publishes. That publish **must not** use `dotnet publish --no-restore`: publishing `--no-restore` against a csproj-only restore makes the static-web-assets pipeline emit an *empty* manifest with **no `wwwroot`**, so `_framework/blazor.web.js` is never published and the admin page 404s / never boots. Letting publish restore again (packages are already cached in the build layer) regenerates the assets correctly. This only reproduces in the Docker/Linux build — a local `dotnet publish` on the dev box always includes the assets, which makes the failure easy to miss.
+- The host serves the assets from `wwwroot` via `app.UseStaticFiles()` (content root is `/app`, set by the Dockerfile `WORKDIR`). The Compose deploy must be rebuilt (`docker-compose build`, `--no-cache` if in doubt) after any change here — `docker-compose up -d` alone reuses a stale image.
+
 ## Project structure
 
 ```
