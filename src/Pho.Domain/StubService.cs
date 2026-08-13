@@ -40,6 +40,15 @@ public sealed class StubService
         return copy;
     }
 
+    /// <summary>Moves a stub into another group, or to the tree root when <paramref name="groupId"/> is null.</summary>
+    public async Task MoveAsync(Guid id, Guid? groupId)
+    {
+        var stub = await _repository.GetAsync(id)
+            ?? throw new InvalidOperationException($"Stub {id} not found.");
+        stub.GroupId = groupId;
+        await _repository.UpdateAsync(stub);
+    }
+
     public async Task SetEnabledAsync(Guid id, bool enabled)
     {
         var stub = await _repository.GetAsync(id)

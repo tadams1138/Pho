@@ -30,11 +30,52 @@
         .body-tools { display: flex; gap: 0.35rem; align-items: center; margin: 0.3rem 0 0.8rem; flex-wrap: wrap; }
         .body-tools .ok { color: var(--accent); }
         .body-tools .err { color: var(--err); }
-        ul.tree { list-style: none; padding-left: 1.2rem; }
-        ul.tree li { margin: 0.25rem 0; }
+        .backup-toolbar { border: 1px solid var(--border); border-radius: 4px; padding: 0.4rem 0.6rem; }
+        .toolbar-label { font-weight: 600; font-size: 0.85rem; color: var(--muted); }
+        .toolbar .inline, label.inline { display: inline-flex; align-items: center; gap: 0.35rem; margin: 0; width: auto; }
+        .toolbar select, .toolbar input[type=text] { width: auto; max-width: 14rem; }
+
+        /* Stub tree + editor, side by side. */
+        .workspace { display: flex; gap: 1rem; align-items: flex-start; flex-wrap: wrap; }
+        .tree-pane { flex: 1 1 22rem; min-width: 18rem; }
+        .editor-pane { flex: 2 1 30rem; min-width: 20rem; border-left: 1px solid var(--border); padding-left: 1rem; }
+        .hint { font-size: 0.8rem; margin: 0 0 0.4rem; }
+        .muted { color: var(--muted); }
+
+        .tree { border: 1px solid var(--border); border-radius: 4px; padding: 0.25rem; }
+        .tree:focus { outline: 2px solid var(--accent); }
+        .tree-row { display: flex; align-items: center; gap: 0.4rem; padding: 0.15rem 0.3rem; cursor: pointer; }
+        .tree-row.selected { background: color-mix(in srgb, var(--accent) 18%, transparent); }
+        .tree-row.active { outline: 1px dashed var(--accent); }
+        .tree-row.drop-target { background: color-mix(in srgb, var(--accent) 32%, transparent); }
+        .tree-row.disabled .stub-name { text-decoration: line-through; color: var(--muted); }
+        .tree-row input.row-select { width: auto; }
+        .twisty { background: none; border: none; color: var(--fg); cursor: pointer; padding: 0 0.2rem; margin: 0; }
+        .twisty:disabled { color: var(--muted); cursor: default; }
+        .twisty-spacer { display: inline-block; width: 1rem; }
+        .stub-summary { color: var(--muted); font-size: 0.85rem; }
+        .enabled-toggle { margin-left: auto; font-size: 0.75rem; }
+        .enabled-toggle.off { color: var(--muted); }
+        .tree-root-drop { margin-top: 0.3rem; padding: 0.4rem; border: 1px dashed var(--border); border-radius: 4px;
+                          color: var(--muted); font-size: 0.8rem; text-align: center; }
+        .tree-root-drop.drop-target { border-color: var(--accent); color: var(--fg); }
         .group { font-weight: 600; }
-        .stub span { margin: 0 0.4rem; }
-        .confirm { color: var(--err); margin-left: 0.4rem; }
+
+        .editor-header { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+        .editor-header h2 { font-size: 1.1rem; margin: 0.2rem 0; }
+        .editor-actions { margin-left: auto; }
+        .dirty-flag { font-size: 0.8rem; }
+        .dirty-flag.dirty { color: var(--err); }
+        .dirty-flag.clean { color: var(--muted); }
+        button.primary { font-weight: 600; }
+        button.danger { color: var(--err); }
+        .errors { color: var(--err); margin: 0.4rem 0; padding-left: 1.2rem; }
+        .confirm-bar { border: 1px solid var(--err); border-radius: 4px; padding: 0.5rem 0.6rem; margin-bottom: 1rem;
+                       display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+        .confirm-bar.unsaved { border-color: var(--accent); }
+        table.rules { margin: 0.2rem 0 0.4rem; }
+        table.rules input, table.rules select { max-width: 14rem; }
+        table.rules th { font-size: 0.8rem; color: var(--muted); }
         .detail code { display: block; }
         .theme-toggle { margin-left: auto; font-size: 0.85rem; }
     </style>
@@ -52,6 +93,37 @@
                 else { localStorage.setItem('pho-theme', t); document.documentElement.setAttribute('data-theme', t); }
             } catch (e) { }
         }
+
+        // Warn before a reload or tab close while the stub editor holds unsaved changes.
+        // (In-app navigation is guarded server-side by the Stubs page.)
+        var phoUnsaved = false;
+        function phoSetUnsaved(value) { phoUnsaved = !!value; }
+        window.addEventListener('beforeunload', function (e) {
+            if (!phoUnsaved) return;
+            e.preventDefault();
+            e.returnValue = '';
+            return '';
+        });
+
+        var phoTree = {
+            // The tree handles these keys itself; stop the browser scrolling the page as well.
+            capture: function (el) {
+                if (!el || el.dataset.phoKeys === '1') return;
+                el.dataset.phoKeys = '1';
+                el.addEventListener('keydown', function (e) {
+                    if (e.target !== el) return;
+                    switch (e.key) {
+                        case 'ArrowUp': case 'ArrowDown': case 'ArrowLeft': case 'ArrowRight':
+                        case 'Home': case 'End': case ' ': case 'Spacebar':
+                            e.preventDefault();
+                    }
+                });
+            },
+            reveal: function (id) {
+                var row = document.getElementById(id);
+                if (row) row.scrollIntoView({ block: 'nearest' });
+            }
+        };
     </script>
     <HeadOutlet />
 </head>

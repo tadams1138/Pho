@@ -78,6 +78,12 @@ internal sealed class FakeGroupRepository : IGroupRepository
 {
     private readonly Dictionary<Guid, Group> _groups = new();
 
+    public FakeGroupRepository(IEnumerable<Group>? seed = null)
+    {
+        if (seed is null) return;
+        foreach (var group in seed) _groups[group.Id] = group;
+    }
+
     public Task<IReadOnlyList<Group>> ListAsync()
         => Task.FromResult<IReadOnlyList<Group>>(_groups.Values.ToList());
 

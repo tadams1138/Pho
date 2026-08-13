@@ -1,32 +1,38 @@
 # 5. Screens and Flows
 
-The UI is a single-page web application with three primary areas: the **stub tree**, the **stub editor**, and the **received-requests view**. Import/export are actions available from the stub tree area.
+The UI is a single-page web application with three primary areas: the **stub tree**, the **stub editor**, and the **received-requests view**. Import/export sit in a backup toolbar at the top of the stub screen, above the tree and its authoring controls.
 
 ## Global layout
 
 - A persistent left pane shows the **stub tree** (groups and stubs).
 - The main pane shows whatever is selected: a stub in the editor, or the received-requests view.
-- A toolbar exposes global actions: **undo / redo** (F7), **export / import**, **clear log**, and a **theme** control.
+- **Backup actions (export / import) sit at the top of the stub screen**, above the controls that add stubs and groups — deliberately *not* between those controls and the tree, where they interrupt the authoring flow.
+- Below them a toolbar exposes the actions that operate on the tree: **new stub**, **add group** (including the parent group to add it inside), **delete selected**, and **undo / redo** (F7). **Clear log** belongs to the received-requests view; a **theme** control sits in the header.
 - **Theme (F11):** the UI follows the system light/dark preference by default, with a manual light/dark override that persists.
 
 ## Stub tree (left pane)
 
 - Displays groups as an expandable/collapsible **tree view**, nested to any depth, with stubs shown under their group and ungrouped stubs at the root.
 - Each stub row shows its name, method + path summary, and its **enabled/disabled** state with a quick toggle.
-- Actions: add group, add child group, rename/delete group, add stub, **duplicate stub** (creates a disabled copy in the same group), move a stub or group to another parent, delete stub.
-- **Deleting a non-empty group** shows a confirmation warning that the delete is **cascading** (removes all nested groups and stubs) before proceeding; the action is undoable (F7).
+- Actions: add group (at the top level or inside a chosen group), add stub, **duplicate stub** (creates a disabled copy in the same group), move stubs and groups by dragging, and delete the current selection.
+- **Selection spans many rows.** Every row has a checkbox; a plain click selects just that row, ctrl/cmd-click adds or removes one, and shift-click selects a range. **Delete selected** removes everything selected in one undoable action. Rows carry **no per-row delete button** — deleting is always the toolbar action over the selection.
+- **Deleting a group** — alone or within a selection — first confirms how much goes, warning that the delete is **cascading** (all nested groups and stubs); the action is undoable (F7). Rows already covered by a selected group are not deleted twice.
+- **Drag and drop rearranges the tree.** Dropping a row on a group moves it into that group (dropping on a stub means "into the group holding it"); a top-level drop area moves rows back to the root. Dropping a group into itself or its own descendant is refused. Dragging a row that is part of the selection moves the whole selection; a group carries its contents.
+- **Keyboard navigation (F12):** ↑ / ↓ / Home / End move the active row, ← / → collapse and expand groups (stepping to parent or first child), space toggles the row's selection, and Delete raises the same confirmation as **Delete selected**. The active row scrolls into view and drives what the editor shows.
 - States: **empty** (no groups or stubs yet, with a prompt to create the first stub), **populated**, and **loading**.
 
 ## Stub editor (main pane)
 
-- Fields for the request matcher: method, path (with matcher type EXACT / WILDCARD / REGEX), and repeatable rows for query, header, and body rules (each with a match-rule type).
-- Fields for the response: status, repeatable header rows, and body.
+- The editor is a **panel beside the tree**, not a separate page: selecting exactly one stub — by click or from the keyboard — opens it; selecting a group, several rows, or nothing leaves the panel empty.
+- Fields for the request matcher: method, path (with matcher type EXACT / WILDCARD / REGEX), and repeatable rows for query, header, and body rules (each with a match-rule type). Header rules are how a stub **matches on request headers**; header names compare case-insensitively.
+- Fields for the response: status, repeatable header rows — the **headers the stub emits** — and body.
 - Controls for `name`, `description`, `group`, and the `enabled` toggle. (There is no priority/ordering control — overlapping stubs are surfaced as an error, not ranked.)
+- **Save and unsaved changes:** edits are held in a draft until **saved**; the panel shows whether changes are unsaved and offers **revert**. Leaving a dirty draft — selecting another row, undo/redo, import, navigating to another view, or closing/reloading the page — warns first and offers **save**, **discard**, or **cancel**.
 - **Body helpers (F9):** the request-body and response-body fields each provide JSON and XML **format** and **validate** buttons; validation results (including error locations) surface inline and are advisory — they never block saving.
 - **Spell-check (F10):** free-text fields (name, description, body text) indicate possible typos; advisory only.
 - **History (F6):** the editor gives access to the mock's history (derived from the configuration history) to view and revert to earlier definitions.
 - **Validation** surfaces inline (e.g. missing path or status) and blocks save. (Distinct from the advisory body/spell helpers above.)
-- Flow: select a stub → edit → save (persisted, tree refreshes) or cancel.
+- Flow: select a stub → edit → save (persisted, tree refreshes) or revert; leaving without saving prompts.
 
 ## Received-requests view (main pane)
 
@@ -39,7 +45,8 @@ The UI is a single-page web application with three primary areas: the **stub tre
 
 ## Export / import flow
 
-- **Export**: toolbar action downloads a JSON file of all stubs and the group tree.
-- **Import**: toolbar action selects a JSON file and choice of **replace-all** or **merge**; on success the tree refreshes, on validation failure an error is shown and nothing changes.
+- Both live in the **backup toolbar at the top of the stub screen**, separated from the authoring controls below it.
+- **Export**: downloads a JSON file of all stubs and the group tree.
+- **Import**: selects a JSON file and a choice of **replace-all** or **merge**; on success the tree refreshes, on validation failure an error is shown and nothing changes. An import with unsaved editor changes prompts first.
 
 > **Open question:** visual design system / component library is not chosen; depends on the frontend stack (`08-architecture.md`). Whatever is chosen must support **light and dark themes** (F11). Screens above are specified by behavior, not visual design.

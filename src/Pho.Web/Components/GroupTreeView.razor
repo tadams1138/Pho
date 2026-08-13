@@ -1,53 +1,224 @@
-@* Recursively renders a GroupNode: child groups (with delete) and stubs (with actions). *@
+@inject IJSRuntime JS
 
-<ul class="tree">
-    @foreach (var child in Node.Children)
+@* The stub tree, rendered from the flattened row list: multi-select with checkboxes and
+   ctrl/shift-click, arrow-key navigation, and drag-and-drop rearranging. Deleting is a toolbar
+   action over the selection, so rows carry no delete button of their own. *@
+
+<div class="tree" tabindex="0" role="tree" aria-multiselectable="true" @ref="_treeElement"
+     @onkeydown="OnKeyDownAsync"
+     @ondragover:preventDefault="true"
+     @ondrop="() => OnDropAsync(null)">
+
+    @foreach (var row in Rows)
     {
-        <li>
-            <span class="group">📁 @child.Group!.Name</span>
-            @if (PendingDeleteGroupId == child.Group.Id)
+        <div @key="row.Id"
+             id="@RowElementId(row.Id)"
+             class="tree-row @RowClass(row)"
+             role="treeitem"
+             aria-selected="@(Selection.Contains(row.Id) ? "true" : "false")"
+             style="@Indent(row)"
+             draggable="true"
+             @ondragstart="() => OnDragStart(row)"
+             @ondragend="OnDragEnd"
+             @ondragenter="() => OnDragEnter(row)"
+             @ondragleave="() => OnDragLeave(row)"
+             @ondragover:preventDefault="true"
+             @ondrop:stopPropagation="true"
+             @ondrop="() => OnDropAsync(row)"
+             @onclick="args => OnRowClickAsync(row, args)">
+
+            <input type="checkbox" class="row-select"
+                   checked="@Selection.Contains(row.Id)"
+                   aria-label="Select @row.Name"
+                   @onclick:stopPropagation="true"
+                   @onchange="() => OnToggleSelection.InvokeAsync(row)" />
+
+            @if (row.Kind == TreeRowKind.Group)
             {
-                <span class="confirm">Delete group and everything inside it?
-                    <button @onclick="() => OnDeleteGroup.InvokeAsync(child.Group)">Yes, delete</button>
-                    <button @onclick="() => OnCancelDeleteGroup.InvokeAsync()">Cancel</button>
-                </span>
+                var group = row.Group!;
+
+                <button type="button" class="twisty"
+                        aria-label="@(row.Expanded ? "Collapse" : "Expand") @group.Name"
+                        disabled="@(!row.HasChildren)"
+                        @onclick:stopPropagation="true"
+                        @onclick="() => OnToggleExpand.InvokeAsync(group.Id)">@Twisty(row)</button>
+                <span class="group">📁 @group.Name</span>
             }
             else
             {
-                <button @onclick="() => OnRequestDeleteGroup.InvokeAsync(child.Group)">Delete group</button>
+                var stub = row.Stub!;
+
+                <span class="twisty-spacer"></span>
+                <span class="stub-name">@stub.Name</span>
+                <span class="stub-summary">@stub.Request.Method @stub.Request.Path.Value</span>
+                <button type="button" class="enabled-toggle @(stub.Enabled ? "on" : "off")"
+                        title="@(stub.Enabled ? "Disable this stub" : "Enable this stub")"
+                        @onclick:stopPropagation="true"
+                        @onclick="() => OnToggleEnabled.InvokeAsync(new EnabledChange(stub, !stub.Enabled))">
+                    @(stub.Enabled ? "Enabled" : "Disabled")
+                </button>
             }
-            <GroupTreeView Node="child"
-                           PendingDeleteGroupId="PendingDeleteGroupId"
-                           OnRequestDeleteGroup="OnRequestDeleteGroup"
-                           OnCancelDeleteGroup="OnCancelDeleteGroup"
-                           OnDeleteGroup="OnDeleteGroup"
-                           OnEditStub="OnEditStub"
-                           OnDuplicateStub="OnDuplicateStub"
-                           OnDeleteStub="OnDeleteStub"
-                           OnToggleStub="OnToggleStub" />
-        </li>
+        </div>
     }
-    @foreach (var stub in Node.Stubs)
-    {
-        <li class="stub">
-            <input type="checkbox" checked="@stub.Enabled"
-                   @onchange="e => OnToggleStub.InvokeAsync((stub, (bool)e.Value!))" />
-            <span>@stub.Name — @stub.Request.Method @stub.Request.Path.Value</span>
-            <button @onclick="() => OnEditStub.InvokeAsync(stub)">Edit</button>
-            <button @onclick="() => OnDuplicateStub.InvokeAsync(stub)">Duplicate</button>
-            <button @onclick="() => OnDeleteStub.InvokeAsync(stub)">Delete</button>
-        </li>
-    }
-</ul>
+
+    <div class="tree-root-drop @(_dragging is not null && _dropTargetId is null ? "drop-target" : "")"
+         @ondragover:preventDefault="true"
+         @ondragenter="() => OnDragEnter(null)"
+         @ondrop:stopPropagation="true"
+         @ondrop="() => OnDropAsync(null)">
+        Drop here to move to the top level
+    </div>
+</div>
 
 @code {
-    [Parameter] public required GroupNode Node { get; set; }
-    [Parameter] public Guid? PendingDeleteGroupId { get; set; }
-    [Parameter] public EventCallback<Group> OnRequestDeleteGroup { get; set; }
-    [Parameter] public EventCallback OnCancelDeleteGroup { get; set; }
-    [Parameter] public EventCallback<Group> OnDeleteGroup { get; set; }
-    [Parameter] public EventCallback<Stub> OnEditStub { get; set; }
-    [Parameter] public EventCallback<Stub> OnDuplicateStub { get; set; }
-    [Parameter] public EventCallback<Stub> OnDeleteStub { get; set; }
-    [Parameter] public EventCallback<(Stub Stub, bool Enabled)> OnToggleStub { get; set; }
+    [Parameter] public required IReadOnlyList<TreeRow> Rows { get; set; }
+    [Parameter] public required TreeSelection Selection { get; set; }
+
+    /// <summary>The row the keyboard is on — also the row whose stub the editor panel shows.</summary>
+    [Parameter] public Guid? ActiveId { get; set; }
+
+    [Parameter] public EventCallback<RowActivation> OnActivate { get; set; }
+    [Parameter] public EventCallback<TreeRow> OnToggleSelection { get; set; }
+    [Parameter] public EventCallback<Guid> OnToggleExpand { get; set; }
+    [Parameter] public EventCallback<EnabledChange> OnToggleEnabled { get; set; }
+    [Parameter] public EventCallback<RowDrop> OnDrop { get; set; }
+    [Parameter] public EventCallback OnDeleteSelection { get; set; }
+
+    private ElementReference _treeElement;
+    private TreeRow? _dragging;
+    private Guid? _dropTargetId;
+    private Guid? _revealed;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            // Stop the page scrolling when the tree itself is handling an arrow key.
+            await JS.InvokeVoidAsync("phoTree.capture", _treeElement);
+        }
+
+        if (ActiveId != _revealed)
+        {
+            _revealed = ActiveId;
+            if (ActiveId is Guid id) await JS.InvokeVoidAsync("phoTree.reveal", RowElementId(id));
+        }
+    }
+
+    private static string RowElementId(Guid id) => $"tree-row-{id}";
+
+    // Invariant formatting: a comma decimal separator would produce invalid CSS.
+    private static string Indent(TreeRow row)
+        => FormattableString.Invariant($"padding-left:{0.4 + row.Depth * 1.1:0.##}rem");
+
+    private static string Twisty(TreeRow row) => !row.HasChildren ? "·" : row.Expanded ? "▾" : "▸";
+
+    private string RowClass(TreeRow row)
+    {
+        var classes = new List<string> { row.Kind == TreeRowKind.Group ? "row-group" : "row-stub" };
+        if (Selection.Contains(row.Id)) classes.Add("selected");
+        if (ActiveId == row.Id) classes.Add("active");
+        if (_dragging is not null && _dropTargetId == row.Id) classes.Add("drop-target");
+        if (row.Kind == TreeRowKind.Stub && !row.Stub!.Enabled) classes.Add("disabled");
+
+        return string.Join(' ', classes);
+    }
+
+    private Task OnRowClickAsync(TreeRow row, MouseEventArgs args)
+        => OnActivate.InvokeAsync(new RowActivation(row, args.CtrlKey || args.MetaKey, args.ShiftKey));
+
+    private async Task OnKeyDownAsync(KeyboardEventArgs args)
+    {
+        var index = ActiveId is Guid id ? IndexOf(id) : -1;
+        var current = index >= 0 ? Rows[index] : null;
+
+        switch (args.Key)
+        {
+            case "ArrowDown":
+                await ActivateAtAsync(index < 0 ? 0 : index + 1, args);
+                break;
+
+            case "ArrowUp":
+                await ActivateAtAsync(index < 0 ? Rows.Count - 1 : index - 1, args);
+                break;
+
+            case "Home":
+                await ActivateAtAsync(0, args);
+                break;
+
+            case "End":
+                await ActivateAtAsync(Rows.Count - 1, args);
+                break;
+
+            case "ArrowRight":
+                if (current is { Kind: TreeRowKind.Group, HasChildren: true })
+                {
+                    if (!current.Expanded) await OnToggleExpand.InvokeAsync(current.Id);
+                    else await ActivateAtAsync(index + 1, args);
+                }
+                break;
+
+            case "ArrowLeft":
+                if (current is { Kind: TreeRowKind.Group, HasChildren: true, Expanded: true })
+                    await OnToggleExpand.InvokeAsync(current.Id);
+                else if (current?.ParentGroupId is Guid parent && IndexOf(parent) >= 0)
+                    await ActivateAtAsync(IndexOf(parent), args);
+                break;
+
+            case " ":
+            case "Spacebar":
+                if (current is not null) await OnToggleSelection.InvokeAsync(current);
+                break;
+
+            case "Delete":
+                await OnDeleteSelection.InvokeAsync();
+                break;
+        }
+    }
+
+    private Task ActivateAtAsync(int index, KeyboardEventArgs args)
+    {
+        if (Rows.Count == 0) return Task.CompletedTask;
+
+        index = Math.Clamp(index, 0, Rows.Count - 1);
+
+        return OnActivate.InvokeAsync(new RowActivation(Rows[index], Ctrl: false, Shift: args.ShiftKey));
+    }
+
+    private int IndexOf(Guid id)
+    {
+        for (var i = 0; i < Rows.Count; i++)
+        {
+            if (Rows[i].Id == id) return i;
+        }
+
+        return -1;
+    }
+
+    private void OnDragStart(TreeRow row)
+    {
+        _dragging = row;
+        _dropTargetId = null;
+    }
+
+    private void OnDragEnd()
+    {
+        _dragging = null;
+        _dropTargetId = null;
+    }
+
+    private void OnDragEnter(TreeRow? row) => _dropTargetId = row?.Id;
+
+    private void OnDragLeave(TreeRow row)
+    {
+        if (_dropTargetId == row.Id) _dropTargetId = null;
+    }
+
+    private async Task OnDropAsync(TreeRow? target)
+    {
+        var dragged = _dragging;
+        OnDragEnd();
+        if (dragged is null || dragged.Id == target?.Id) return;
+
+        await OnDrop.InvokeAsync(new RowDrop(dragged, target));
+    }
 }

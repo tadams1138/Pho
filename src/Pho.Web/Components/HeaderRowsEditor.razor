@@ -1,0 +1,46 @@
+@* Repeatable name/value rows for the headers a stub's response emits. *@
+
+<table class="rules">
+    <thead>
+        <tr>
+            <th>Header name</th>
+            <th>Value</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var row in Rows)
+        {
+            <tr @key="row">
+                <td>
+                    <input type="text" value="@row.Name" placeholder="Content-Type"
+                           @oninput="e => SetAsync(() => row.Name = e.Value?.ToString() ?? "")" />
+                </td>
+                <td>
+                    <input type="text" value="@row.Value" placeholder="application/json"
+                           @oninput="e => SetAsync(() => row.Value = e.Value?.ToString() ?? "")" />
+                </td>
+                <td>
+                    <button type="button" @onclick="() => SetAsync(() => Rows.Remove(row))">Remove</button>
+                </td>
+            </tr>
+        }
+        @if (Rows.Count == 0)
+        {
+            <tr><td colspan="3" class="muted">No response headers — only the status and body are returned.</td></tr>
+        }
+    </tbody>
+</table>
+
+<button type="button" @onclick="() => SetAsync(() => Rows.Add(new HeaderDraft()))">Add response header</button>
+
+@code {
+    [Parameter] public required List<HeaderDraft> Rows { get; set; }
+    [Parameter] public EventCallback OnChanged { get; set; }
+
+    private Task SetAsync(Action apply)
+    {
+        apply();
+        return OnChanged.InvokeAsync();
+    }
+}

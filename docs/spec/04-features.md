@@ -19,6 +19,20 @@ Test authors create and maintain stubs through the web UI.
   - Given existing stubs
   - Then I can see them in a list, open one to view or edit its details, save changes, and delete a stub
   - _(Stubs have no priority or ordering. Two enabled stubs that match the same request are a configuration error, handled in F4 — not resolved by ranking.)_
+- **Match on request headers**
+  - Given the stub editor
+  - When I add one or more header rules (name + EQUALS / CONTAINS / REGEX / PRESENT / ABSENT)
+  - Then the stub matches only requests whose headers satisfy every rule, with header **names compared case-insensitively**
+  - And a stub with no header rules is unconstrained by headers
+- **Emit response headers**
+  - Given the stub editor
+  - When I add response header rows (name + value)
+  - Then a request served by that stub receives those headers alongside the status and body; a stub with no header rows emits none
+- **Save and unsaved changes**
+  - Given I have edited a stub in the editor
+  - Then the editor shows that there are unsaved changes, and nothing is persisted until I **save**
+  - And when I try to leave — selecting another row in the tree, navigating to another view, or closing/reloading the page — I am warned first and can save, discard, or stay
+  - And saving revalidates the draft; validation failures are shown and nothing is persisted
 - **Duplicate a stub**
   - Given an existing stub
   - When I duplicate it
@@ -66,6 +80,18 @@ Stubs are arranged in a tree of user-defined groups for organizational purposes.
   - Then the group and everything nested under it — all descendant groups and all contained stubs — are deleted
   - And the UI warns that the delete is cascading and asks for confirmation first (it is destructive)
   - And the whole action is recorded as a single undoable change, so it can be undone in one step (F7)
+- **Rearrange by dragging**
+  - Given the stub tree
+  - When I drag a stub or a group onto a group (or onto the top-level drop area)
+  - Then it moves there — a stub changes group, a group is nested under the target — and the move is one undoable change
+  - And a drop that would nest a group inside itself or one of its own descendants is refused, as is a drop where the row already lives
+  - And when the dragged row is part of the current selection, the whole selection moves; a group carries its contents with it
+- **Select many rows and delete them together**
+  - Given the stub tree
+  - When I select several rows — by row checkbox, ctrl/cmd-click to add one, or shift-click for a range — and choose **Delete selected**
+  - Then I am first told how much will be removed (counting everything nested inside selected groups), and on confirmation all of it is deleted as one undoable change
+  - And rows already covered by a selected group are not deleted twice
+  - _(Deleting is a single toolbar action over the selection; individual rows carry no delete button.)_
 - **Grouping does not affect matching**
   - Given stubs in any groups
   - Then request matching (F4) behaves identically regardless of grouping
@@ -215,3 +241,24 @@ The stub editor helps authors work with structured bodies on both the **request 
 - **Manual override**
   - Given I choose a theme (light or dark) explicitly
   - Then the UI uses my choice, and it persists across visits until I change it or revert to "follow system"
+
+## F12 — Navigate the stub tree from the keyboard
+
+The tree is operable without a mouse; the editor follows the keyboard.
+
+- **Move through rows**
+  - Given focus is on the stub tree
+  - When I press ↑ / ↓ (or Home / End)
+  - Then the active row moves through the tree in the order it is displayed, scrolling into view, and becomes the selection
+- **Collapse and expand**
+  - Given the active row is a group
+  - When I press ← or →
+  - Then the group collapses or expands; on an already-expanded group → moves into its first child, and on a collapsed or non-group row ← moves to its parent group
+- **Select and delete**
+  - Given the active row
+  - When I press space
+  - Then that row is added to or removed from the selection (as ctrl/cmd-click does), and Delete raises the same confirmation as **Delete selected**
+- **Editing follows selection**
+  - Given exactly one stub is selected, however it was selected
+  - Then the stub editor shows that stub; selecting a group, several rows, or nothing shows no editor
+  - And moving off a stub with unsaved changes warns first (F1)

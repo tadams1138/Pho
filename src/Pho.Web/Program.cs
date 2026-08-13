@@ -34,6 +34,7 @@ builder.Services.AddScoped<IConfigPorter, EfConfigPorter>();
 
 builder.Services.AddScoped<StubService>();
 builder.Services.AddScoped<GroupService>();
+builder.Services.AddScoped<TreeEditService>();
 builder.Services.AddScoped<ConfigHistoryService>();
 builder.Services.AddSingleton<IMockTrafficPolicy>(new PortMockTrafficPolicy(mockPort));
 

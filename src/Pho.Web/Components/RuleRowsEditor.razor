@@ -1,0 +1,69 @@
+@* Repeatable match-rule rows for query parameters or request headers (F1). *@
+
+<table class="rules">
+    <thead>
+        <tr>
+            <th>@Noun name</th>
+            <th>Rule</th>
+            <th>Value</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var row in Rows)
+        {
+            <tr @key="row">
+                <td>
+                    <input type="text" value="@row.Name" placeholder="@Placeholder"
+                           @oninput="e => SetAsync(() => row.Name = e.Value?.ToString() ?? "")" />
+                </td>
+                <td>
+                    <select value="@row.Type"
+                            @onchange="e => SetAsync(() => row.Type = Enum.Parse<MatchRuleType>(e.Value!.ToString()!))">
+                        @foreach (var type in Enum.GetValues<MatchRuleType>())
+                        {
+                            <option value="@type">@type</option>
+                        }
+                    </select>
+                </td>
+                <td>
+                    @if (ParamRuleDraft.TakesValue(row.Type))
+                    {
+                        <input type="text" value="@row.Value"
+                               @oninput="e => SetAsync(() => row.Value = e.Value?.ToString() ?? "")" />
+                    }
+                    else
+                    {
+                        <span class="muted">(existence only)</span>
+                    }
+                </td>
+                <td>
+                    <button type="button" @onclick="() => SetAsync(() => Rows.Remove(row))">Remove</button>
+                </td>
+            </tr>
+        }
+        @if (Rows.Count == 0)
+        {
+            <tr><td colspan="4" class="muted">No @Noun.ToLowerInvariant() rules — any value matches.</td></tr>
+        }
+    </tbody>
+</table>
+
+<button type="button" @onclick="() => SetAsync(() => Rows.Add(new ParamRuleDraft()))">Add @Noun.ToLowerInvariant() rule</button>
+
+@code {
+    [Parameter] public required List<ParamRuleDraft> Rows { get; set; }
+
+    /// <summary>What the rows describe, e.g. "Header" or "Query parameter".</summary>
+    [Parameter] public required string Noun { get; set; }
+
+    [Parameter] public string? Placeholder { get; set; }
+
+    [Parameter] public EventCallback OnChanged { get; set; }
+
+    private Task SetAsync(Action apply)
+    {
+        apply();
+        return OnChanged.InvokeAsync();
+    }
+}

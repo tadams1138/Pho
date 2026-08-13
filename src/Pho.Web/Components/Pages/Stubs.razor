@@ -1,74 +1,194 @@
 @page "/"
 @rendermode InteractiveServer
+@implements IDisposable
 @inject StubService StubSvc
-@inject GroupService Groups
+@inject GroupService GroupSvc
+@inject TreeEditService TreeEdit
 @inject ConfigHistoryService History
 @inject IConfigPorter Porter
 @inject NavigationManager Nav
+@inject IJSRuntime JS
 
 <h1>Stubs</h1>
 
-<div class="toolbar">
-    <button @onclick="@(() => Nav.NavigateTo("/stubs/new"))">New stub</button>
-    <input type="text" placeholder="New group name" @bind="_newGroupName" />
-    <button @onclick="AddGroupAsync">Add group</button>
-    <button @onclick="UndoAsync" disabled="@(!_canUndo)">Undo</button>
-    <button @onclick="RedoAsync" disabled="@(!_canRedo)">Redo</button>
-</div>
-
-<div class="toolbar">
+@* Backup actions sit at the top of the page, clear of the authoring controls and the tree. *@
+<div class="toolbar backup-toolbar">
+    <span class="toolbar-label">Backup</span>
     <a href="/export" target="_blank" rel="noopener">Export</a>
-    <label>Import mode
+    <label class="inline">Import mode
         <select @bind="_importMode">
             <option value="@ImportMode.ReplaceAll">Replace all</option>
             <option value="@ImportMode.Merge">Merge</option>
         </select>
     </label>
     <InputFile OnChange="OnImportAsync" accept=".json" />
+    @if (_importError is not null)
+    {
+        <span class="err">Import failed: @_importError</span>
+    }
 </div>
 
-@if (_importError is not null)
+<div class="toolbar">
+    <button @onclick="NewStubAsync">New stub</button>
+    <input type="text" placeholder="New group name" @bind="_newGroupName" />
+    <label class="inline">in
+        <select value="@(_newGroupParentId?.ToString() ?? "")"
+                @onchange="e => _newGroupParentId = ParseGuid(e.Value)">
+            <option value="">(top level)</option>
+            @foreach (var group in GroupOptions())
+            {
+                <option value="@group.Id">@group.Label</option>
+            }
+        </select>
+    </label>
+    <button @onclick="AddGroupAsync">Add group</button>
+    <button @onclick="RequestDelete" disabled="@_selection.IsEmpty">
+        Delete selected@(_selection.IsEmpty ? "" : $" ({_selection.Count})")
+    </button>
+    <button @onclick="UndoAsync" disabled="@(!_canUndo)">Undo</button>
+    <button @onclick="RedoAsync" disabled="@(!_canRedo)">Redo</button>
+</div>
+
+@if (_deletePlan is not null)
 {
-    <p style="color:#b00020">Import failed: @_importError</p>
+    <div class="confirm-bar">
+        Delete @_deletePlan.Describe()? A group is deleted with everything inside it. This can be undone.
+        <button class="danger" @onclick="ConfirmDeleteAsync">Yes, delete</button>
+        <button @onclick="() => _deletePlan = null">Cancel</button>
+    </div>
 }
 
-@if (_tree is null)
+@if (_pending is not null)
 {
-    <p>Loading…</p>
+    <div class="confirm-bar unsaved">
+        You have unsaved changes@(_draft is { Name.Length: > 0 } ? $" to '{_draft.Name}'" : "").
+        <button class="primary" @onclick="SaveAndContinueAsync">Save and continue</button>
+        <button class="danger" @onclick="DiscardAndContinueAsync">Discard changes</button>
+        <button @onclick="() => _pending = null">Cancel</button>
+    </div>
 }
-else if (_tree.Children.Count == 0 && _tree.Stubs.Count == 0)
-{
-    <p>No stubs or groups yet. Create one to start mocking.</p>
-}
-else
-{
-    <GroupTreeView Node="_tree"
-                   PendingDeleteGroupId="_pendingDeleteGroupId"
-                   OnRequestDeleteGroup="RequestDeleteGroup"
-                   OnCancelDeleteGroup="CancelDeleteGroup"
-                   OnDeleteGroup="DeleteGroupAsync"
-                   OnEditStub="EditStub"
-                   OnDuplicateStub="DuplicateStubAsync"
-                   OnDeleteStub="DeleteStubAsync"
-                   OnToggleStub="ToggleStubAsync" />
-}
+
+<div class="workspace">
+    <div class="tree-pane">
+        @if (_tree is null)
+        {
+            <p>Loading…</p>
+        }
+        else if (_rows.Count == 0)
+        {
+            <p>No stubs or groups yet. Create one to start mocking.</p>
+        }
+        else
+        {
+            <p class="hint muted">
+                Click to select, ctrl/cmd-click to add, shift-click for a range. Arrow keys navigate;
+                ← / → collapse and expand; space toggles selection. Drag rows to rearrange the tree.
+            </p>
+            <GroupTreeView Rows="_rows"
+                           Selection="_selection"
+                           ActiveId="_activeId"
+                           OnActivate="OnActivateAsync"
+                           OnToggleSelection="OnToggleSelectionAsync"
+                           OnToggleExpand="ToggleExpand"
+                           OnToggleEnabled="ToggleEnabledAsync"
+                           OnDrop="OnDropAsync"
+                           OnDeleteSelection="RequestDelete" />
+        }
+    </div>
+
+    <div class="editor-pane">
+        @if (_draft is not null)
+        {
+            <StubEditorPanel Draft="_draft"
+                             Groups="GroupOptions()"
+                             IsDirty="IsDirty"
+                             IsNew="@(_draft.Id is null)"
+                             Errors="_errors"
+                             OnChanged="OnDraftChanged"
+                             OnSave="SaveFromPanelAsync"
+                             OnRevert="RevertDraft"
+                             OnDuplicate="DuplicateAsync"
+                             OnClose="CloseEditorAsync" />
+        }
+        else if (_selection.Count > 1)
+        {
+            <p class="muted">
+                @_selection.Count rows selected. Delete them together, drag them into a group,
+                or select a single stub to edit it.
+            </p>
+        }
+        else
+        {
+            <p class="muted">Select a stub to edit it, or create a new one.</p>
+        }
+    </div>
+</div>
 
 @code {
+    private IReadOnlyList<Group> _groups = Array.Empty<Group>();
+    private IReadOnlyList<Stub> _stubs = Array.Empty<Stub>();
     private GroupNode? _tree;
+    private IReadOnlyList<TreeRow> _rows = Array.Empty<TreeRow>();
+    private readonly HashSet<Guid> _collapsed = new();
+
+    private TreeSelection _selection = TreeSelection.Empty;
+    private Guid? _activeId;
+
+    private StubDraft? _draft;
+    private StubDraft? _baseline;
+    private IReadOnlyList<string> _errors = Array.Empty<string>();
+
+    private DeletionPlan? _deletePlan;
+
+    // Set while an action waits on the unsaved-changes prompt; running it resumes that action.
+    private Func<Task>? _pending;
+    private bool _leavingWithoutSaving;
+    private bool _dirtyPushedToBrowser;
+    private IDisposable? _navigationGuard;
+
     private string _newGroupName = "";
-    private Guid? _pendingDeleteGroupId;
+    private Guid? _newGroupParentId;
     private bool _canUndo;
     private bool _canRedo;
     private ImportMode _importMode = ImportMode.ReplaceAll;
     private string? _importError;
 
+    private bool IsDirty => _draft is not null && _baseline is not null && !_draft.ValueEquals(_baseline);
+
     protected override Task OnInitializedAsync() => LoadAsync();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            // Guards in-app navigation (e.g. to received requests); phoSetUnsaved guards reload and tab close.
+            _navigationGuard = Nav.RegisterLocationChangingHandler(OnLocationChangingAsync);
+        }
+
+        if (_dirtyPushedToBrowser != IsDirty)
+        {
+            _dirtyPushedToBrowser = IsDirty;
+            await JS.InvokeVoidAsync("phoSetUnsaved", _dirtyPushedToBrowser);
+        }
+    }
 
     private async Task LoadAsync()
     {
-        var groups = await Groups.ListAsync();
-        var stubs = await StubSvc.ListAsync();
-        _tree = GroupTree.Build(groups, stubs);
+        _groups = await GroupSvc.ListAsync();
+        _stubs = await StubSvc.ListAsync();
+        _tree = GroupTree.Build(_groups, _stubs);
+        _rows = TreeFlattener.Flatten(_tree, _collapsed);
+
+        _selection = _selection.Retain(_rows.Select(r => r.Id));
+        if (_activeId is Guid active && _rows.All(r => r.Id != active)) _activeId = null;
+
+        // A draft survives reloads — they happen for unrelated edits — unless its stub is gone.
+        if (_draft is { Id: Guid editedId } && _stubs.All(s => s.Id != editedId))
+        {
+            _draft = null;
+            _baseline = null;
+        }
+
         _canUndo = await History.CanUndoAsync();
         _canRedo = await History.CanRedoAsync();
     }
@@ -79,60 +199,292 @@ else
         await LoadAsync();
     }
 
-    private async Task AddGroupAsync()
+    private IReadOnlyList<GroupOption> GroupOptions()
+        => TreeFlattener.Flatten(GroupTree.Build(_groups, Array.Empty<Stub>()))
+            .Where(row => row.Kind == TreeRowKind.Group)
+            .Select(row => new GroupOption(row.Id, new string('\u00a0', row.Depth * 3) + row.Group!.Name))
+            .ToList();
+
+    private static Guid? ParseGuid(object? value) => Guid.TryParse(value?.ToString(), out var id) ? id : null;
+
+    // ---- selection -------------------------------------------------------------------------
+
+    private TreeSelection Apply(RowActivation activation)
+        => activation.Ctrl ? _selection.Toggle(activation.Row.Id)
+            : activation.Shift ? _selection.ExtendTo(_rows, activation.Row.Id)
+            : _selection.SelectOnly(activation.Row.Id);
+
+    /// <summary>The stub the editor should show for a selection: exactly one stub row, or nothing.</summary>
+    private Guid? EditorTargetFor(TreeSelection selection)
+        => selection.SingleId is Guid id && _stubs.Any(s => s.Id == id) ? id : null;
+
+    private Task OnActivateAsync(RowActivation activation)
     {
-        if (string.IsNullOrWhiteSpace(_newGroupName)) return;
-        var name = _newGroupName.Trim();
-        await Groups.CreateAsync(name);
-        _newGroupName = "";
-        await RecordAndReloadAsync($"Added group '{name}'");
+        // Only warn when the editor would actually be swapped out from under the user.
+        if (IsDirty && EditorTargetFor(Apply(activation)) != _draft!.Id)
+        {
+            _pending = () => CommitActivationAsync(activation);
+            return Task.CompletedTask;
+        }
+
+        return CommitActivationAsync(activation);
     }
 
-    private void RequestDeleteGroup(Group group) => _pendingDeleteGroupId = group.Id;
-
-    private void CancelDeleteGroup() => _pendingDeleteGroupId = null;
-
-    private async Task DeleteGroupAsync(Group group)
+    private Task CommitActivationAsync(RowActivation activation)
     {
-        await Groups.DeleteAsync(group.Id);
-        _pendingDeleteGroupId = null;
-        await RecordAndReloadAsync($"Deleted group '{group.Name}'");
+        _selection = Apply(activation);
+        _activeId = activation.Row.Id;
+        _newGroupParentId = activation.Row.DropTargetGroupId;
+        SyncEditorToSelection();
+
+        return Task.CompletedTask;
     }
 
-    private void EditStub(Stub stub) => Nav.NavigateTo($"/stubs/{stub.Id}");
+    private Task OnToggleSelectionAsync(TreeRow row) => OnActivateAsync(new RowActivation(row, Ctrl: true));
 
-    private async Task DuplicateStubAsync(Stub stub)
+    private void SyncEditorToSelection()
     {
-        await StubSvc.DuplicateAsync(stub.Id);
-        await RecordAndReloadAsync($"Duplicated stub '{stub.Name}'");
+        _errors = Array.Empty<string>();
+
+        if (EditorTargetFor(_selection) is Guid stubId)
+        {
+            _draft = StubDraft.From(_stubs.First(s => s.Id == stubId));
+            _baseline = _draft.Clone();
+        }
+        else
+        {
+            _draft = null;
+            _baseline = null;
+        }
     }
 
-    private async Task DeleteStubAsync(Stub stub)
+    private void ToggleExpand(Guid groupId)
     {
-        await StubSvc.DeleteAsync(stub.Id);
-        await RecordAndReloadAsync($"Deleted stub '{stub.Name}'");
+        if (!_collapsed.Remove(groupId)) _collapsed.Add(groupId);
+        _rows = TreeFlattener.Flatten(_tree!, _collapsed);
     }
 
-    private async Task ToggleStubAsync((Stub Stub, bool Enabled) change)
+    // ---- unsaved-changes prompt ------------------------------------------------------------
+
+    /// <summary>Runs <paramref name="action"/>, or parks it behind the prompt when edits are unsaved.</summary>
+    private Task GuardAsync(Func<Task> action)
+    {
+        if (!IsDirty) return action();
+
+        _pending = action;
+
+        return Task.CompletedTask;
+    }
+
+    private async Task SaveAndContinueAsync()
+    {
+        if (!await SaveDraftAsync()) return;
+
+        await RunPendingAsync();
+    }
+
+    private async Task DiscardAndContinueAsync()
+    {
+        if (_baseline is not null) _draft = _baseline.Clone();
+        _errors = Array.Empty<string>();
+
+        await RunPendingAsync();
+    }
+
+    private async Task RunPendingAsync()
+    {
+        var pending = _pending;
+        _pending = null;
+        if (pending is not null) await pending();
+    }
+
+    private ValueTask OnLocationChangingAsync(LocationChangingContext context)
+    {
+        if (!IsDirty || _leavingWithoutSaving) return ValueTask.CompletedTask;
+
+        context.PreventNavigation();
+        var target = context.TargetLocation;
+        _pending = () =>
+        {
+            _leavingWithoutSaving = true;
+            Nav.NavigateTo(target);
+
+            return Task.CompletedTask;
+        };
+        StateHasChanged();
+
+        return ValueTask.CompletedTask;
+    }
+
+    // ---- editing ---------------------------------------------------------------------------
+
+    private Task NewStubAsync() => GuardAsync(() =>
+    {
+        _draft = StubDraft.ForNewStub(_newGroupParentId);
+        _baseline = _draft.Clone();
+        _errors = Array.Empty<string>();
+        _selection = TreeSelection.Empty;
+        _activeId = null;
+
+        return Task.CompletedTask;
+    });
+
+    private void OnDraftChanged() => _errors = Array.Empty<string>();
+
+    private void RevertDraft()
+    {
+        if (_baseline is not null) _draft = _baseline.Clone();
+        _errors = Array.Empty<string>();
+    }
+
+    private Task CloseEditorAsync() => GuardAsync(() =>
+    {
+        _draft = null;
+        _baseline = null;
+        _selection = TreeSelection.Empty;
+        _activeId = null;
+
+        return Task.CompletedTask;
+    });
+
+    private async Task SaveFromPanelAsync() => _ = await SaveDraftAsync();
+
+    private async Task<bool> SaveDraftAsync()
+    {
+        if (_draft is null) return true;
+
+        _errors = _draft.Validate();
+        if (_errors.Count > 0) return false;
+
+        if (_draft.Id is Guid id)
+        {
+            var stub = await StubSvc.GetAsync(id);
+            if (stub is null) return false;
+
+            _draft.ApplyTo(stub);
+            await StubSvc.UpdateAsync(stub);
+        }
+        else
+        {
+            var created = await StubSvc.CreateAsync(_draft.ToStub());
+            _draft = StubDraft.From(created);
+        }
+
+        _baseline = _draft.Clone();
+        if (_draft.Id is Guid savedId)
+        {
+            _selection = TreeSelection.Empty.SelectOnly(savedId);
+            _activeId = savedId;
+        }
+
+        await RecordAndReloadAsync($"Saved stub '{_draft.Name}'");
+
+        return true;
+    }
+
+    private Task DuplicateAsync() => GuardAsync(async () =>
+    {
+        if (_draft?.Id is not Guid id) return;
+
+        var copy = await StubSvc.DuplicateAsync(id);
+        _selection = TreeSelection.Empty.SelectOnly(copy.Id);
+        _activeId = copy.Id;
+        await RecordAndReloadAsync($"Duplicated stub '{copy.Name}'");
+        SyncEditorToSelection();
+    });
+
+    private async Task ToggleEnabledAsync(EnabledChange change)
     {
         await StubSvc.SetEnabledAsync(change.Stub.Id, change.Enabled);
         var verb = change.Enabled ? "Enabled" : "Disabled";
         await RecordAndReloadAsync($"{verb} stub '{change.Stub.Name}'");
+
+        // Keep an open, unedited editor in step with the row's toggle.
+        if (_draft is { Id: Guid id } && id == change.Stub.Id && !IsDirty) SyncEditorToSelection();
     }
 
-    private async Task UndoAsync()
+    // ---- groups, deleting, moving ----------------------------------------------------------
+
+    private async Task AddGroupAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_newGroupName)) return;
+
+        var name = _newGroupName.Trim();
+        var parentId = _newGroupParentId;
+        var parentName = parentId is Guid p ? _groups.FirstOrDefault(g => g.Id == p)?.Name : null;
+
+        await GroupSvc.CreateAsync(name, parentId);
+
+        // Make sure the new group is visible rather than hidden inside a collapsed parent.
+        if (parentId is Guid parent) _collapsed.Remove(parent);
+
+        _newGroupName = "";
+        await RecordAndReloadAsync(parentName is null
+            ? $"Added group '{name}'"
+            : $"Added group '{name}' inside '{parentName}'");
+    }
+
+    private void RequestDelete()
+    {
+        if (_selection.IsEmpty || _tree is null) return;
+
+        var plan = TreeDeletion.Plan(_tree, _selection.Ids);
+        _deletePlan = plan.IsEmpty ? null : plan;
+    }
+
+    private async Task ConfirmDeleteAsync()
+    {
+        _deletePlan = null;
+
+        var plan = await TreeEdit.DeleteAsync(_selection.Ids);
+        _selection = TreeSelection.Empty;
+        _activeId = null;
+        _draft = null;
+        _baseline = null;
+
+        await RecordAndReloadAsync($"Deleted {plan.Describe()}");
+    }
+
+    private async Task OnDropAsync(RowDrop drop)
+    {
+        var targetGroupId = drop.Target?.DropTargetGroupId;
+
+        // Dragging a row that is part of the selection moves the whole selection with it.
+        var moving = _selection.Contains(drop.Dragged.Id)
+            ? _selection.Ids.ToList()
+            : new List<Guid> { drop.Dragged.Id };
+
+        var destination = targetGroupId is Guid target
+            ? $"'{_groups.First(g => g.Id == target).Name}'"
+            : "the top level";
+
+        var moved = await TreeEdit.MoveAsync(moving, targetGroupId);
+        if (moved == 0) return;
+
+        if (targetGroupId is Guid group) _collapsed.Remove(group);
+
+        await RecordAndReloadAsync(moved == 1
+            ? $"Moved '{drop.Dragged.Name}' to {destination}"
+            : $"Moved {moved} rows to {destination}");
+    }
+
+    // ---- history and backup ----------------------------------------------------------------
+
+    private Task UndoAsync() => GuardAsync(async () =>
     {
         await History.UndoAsync();
         await LoadAsync();
-    }
+        SyncEditorToSelection();
+    });
 
-    private async Task RedoAsync()
+    private Task RedoAsync() => GuardAsync(async () =>
     {
         await History.RedoAsync();
         await LoadAsync();
-    }
+        SyncEditorToSelection();
+    });
 
-    private async Task OnImportAsync(InputFileChangeEventArgs e)
+    private Task OnImportAsync(InputFileChangeEventArgs e) => GuardAsync(async () =>
     {
         try
         {
@@ -140,12 +492,19 @@ else
             var json = await reader.ReadToEndAsync();
             await Porter.ImportJsonAsync(json, _importMode);
             await History.RecordAsync($"Imported configuration ({_importMode})");
+
             _importError = null;
+            _selection = TreeSelection.Empty;
+            _activeId = null;
+            _draft = null;
+            _baseline = null;
             await LoadAsync();
         }
         catch (Exception ex)
         {
             _importError = ex.Message;
         }
-    }
+    });
+
+    public void Dispose() => _navigationGuard?.Dispose();
 }
