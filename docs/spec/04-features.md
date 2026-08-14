@@ -79,7 +79,7 @@ Stubs are arranged in a tree of user-defined groups for organizational purposes.
   - When I delete it
   - Then the group and everything nested under it — all descendant groups and all contained stubs — are deleted
   - And the UI warns that the delete is cascading and asks for confirmation first (it is destructive)
-  - And the whole action is recorded as a single undoable change, so it can be undone in one step (F7)
+  - And the whole action is recorded as a single undoable change, so it can be undone in one step (F6)
 - **Rearrange by dragging**
   - Given the stub tree
   - When I drag a stub or a group onto a group (or onto the top-level drop area)
@@ -152,20 +152,7 @@ Pho records traffic so testers can confirm what was called.
 
 Verification is **human-observed in the UI only, by design** — there is no programmatic query endpoint and none is planned (see [`06-interfaces.md`](06-interfaces.md)).
 
-## F6 — Mock definition history (view / revert)
-
-Pho versions the whole configuration ([`03-domain-model.md`](03-domain-model.md#configuration-history-and-undoredo)); a single mock's history is a derived view of that timeline, so edits to a mock can be reviewed and reverted.
-
-- **View a mock's history**
-  - Given a stub that has been edited over time
-  - When I open its history
-  - Then I see, in reverse-chronological order, the configuration revisions in which that stub's definition changed, and can inspect the definition captured in each
-- **Revert a mock**
-  - Given an earlier version of a stub's definition
-  - When I revert the stub to it
-  - Then a new configuration revision is recorded in which only that stub's definition is restored (other mocks and the group tree are unchanged), and the revert can itself be undone (F7)
-
-## F7 — Undo / redo configuration changes
+## F6 — Undo / redo configuration changes
 
 A global undo/redo lets a user reverse and reapply any change to the mock configuration, in order — by stepping through the configuration history ([`03-domain-model.md`](03-domain-model.md#configuration-history-and-undoredo)).
 
@@ -189,7 +176,7 @@ A global undo/redo lets a user reverse and reapply any change to the mock config
   - Given configuration revisions older than the history retention window (1 year default) have been pruned
   - Then undo cannot reach past what remains
 
-## F8 — Export and import mock definitions (backup / restore)
+## F7 — Export and import mock definitions (backup / restore)
 
 - **Export the full set**
   - Given the current configuration
@@ -207,7 +194,7 @@ A global undo/redo lets a user reverse and reapply any change to the mock config
   - When I import it
   - Then the import is rejected with a clear error and existing mocks are left unchanged
 
-## F9 — Body formatting and validation (JSON / XML)
+## F8 — Body formatting and validation (JSON / XML)
 
 The stub editor helps authors work with structured bodies on both the **request body matcher** and the **response body** fields.
 
@@ -223,7 +210,7 @@ The stub editor helps authors work with structured bodies on both the **request 
   - Given a body that is not JSON or XML (e.g. plain text or a deliberately malformed payload for a test)
   - Then formatting/validation is a convenience only and does **not** prevent saving the stub — bodies may be any content
 
-## F10 — Spell-check hints
+## F9 — Spell-check hints
 
 - **Highlight possible typos**
   - Given free-text input in the editor (e.g. stub `name`, `description`, and body text)
@@ -233,7 +220,7 @@ The stub editor helps authors work with structured bodies on both the **request 
   - Given a flagged word (which may be an intentional identifier, code, or domain term)
   - Then the hint is advisory only and never blocks saving or alters the stored value
 
-## F11 — Light / dark theme
+## F10 — Light / dark theme
 
 - **Follow system by default**
   - Given the UI loads and the OS/browser exposes a color-scheme preference
@@ -242,7 +229,7 @@ The stub editor helps authors work with structured bodies on both the **request 
   - Given I choose a theme (light or dark) explicitly
   - Then the UI uses my choice, and it persists across visits until I change it or revert to "follow system"
 
-## F12 — Navigate the stub tree from the keyboard
+## F11 — Navigate the stub tree from the keyboard
 
 The tree is operable without a mouse; the editor follows the keyboard.
 

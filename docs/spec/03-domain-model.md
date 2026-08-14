@@ -107,7 +107,7 @@ When a request arrives at the mock-serving surface:
 
 ## Configuration history and undo/redo
 
-Pho versions the **entire mock configuration** — all stubs and the full group tree — as a single linear history. Every change (create/edit/delete/toggle/move a stub, or create/rename/move/**cascade-delete** a group) produces a new **ConfigRevision** representing the resulting configuration. This one history backs both undo/redo (F7) and per-mock history (F6). It is separate from `ReceivedRequest`, which logs *traffic*, not configuration changes; undo/redo never alter traffic logs.
+Pho versions the **entire mock configuration** — all stubs and the full group tree — as a single linear history. Every change (create/edit/delete/toggle/move a stub, or create/rename/move/**cascade-delete** a group) produces a new **ConfigRevision** representing the resulting configuration. This history backs undo/redo (F6). There is no per-mock history — only the whole-configuration timeline. It is separate from `ReceivedRequest`, which logs *traffic*, not configuration changes; undo/redo never alter traffic logs.
 
 Versioning at the whole-configuration level (rather than per single mock) is deliberate: multi-entity actions — most importantly **cascade group deletion** — are captured and reversed atomically. Undoing a cascade delete restores the entire removed subtree simply by returning to the prior revision, with no special-case bookkeeping.
 
@@ -129,10 +129,5 @@ Versioning at the whole-configuration level (rather than per single mock) is del
 - Because every change — including cascade deletes — is just a revision, **all** changes are undoable/redoable uniformly, with no per-operation special-casing.
 - Making a **new** change while not at the tip creates a new revision after the current pointer and discards the forward (redo) revisions (standard undo/redo semantics).
 - **Undo depth is bounded by retention:** configuration history is retained 1 year by default (configurable — see `07-non-functional.md`); undo cannot reach past pruned revisions.
-
-### Per-mock history and revert (F6)
-
-- A single mock's history is a **derived view**: the config revisions in which that stub's definition changed.
-- **Reverting a mock** to an earlier version produces a new ConfigRevision identical to the current configuration except that the chosen stub's definition is restored; other mocks and the group tree are unaffected. The revert is itself a revision and can be undone.
 
 Export is a current-state-only snapshot — configuration history is **not** included in the backup file.

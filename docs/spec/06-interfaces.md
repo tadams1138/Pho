@@ -25,7 +25,7 @@ The web UI is a client of an internal backend API that persists and queries doma
 - **Received requests** — list (descending by time received, filterable by method and URL-path substring, paginated with page size 10/20/50/100), get full detail, clear.
 - **Export / import** — produce the backup JSON (stubs + group tree); import with replace-all or merge and validation.
 
-Body JSON/XML formatting, spell-check hints, and theming (F9–F11) are **client-side UI concerns** and require no authoring-API operations.
+Body JSON/XML formatting, spell-check hints, and theming (F8–F10) are **client-side UI concerns** and require no authoring-API operations.
 
 The concrete shape (REST vs. other, paths, payloads) is defined once the stack is chosen; it must cover exactly the operations the features in `04-features.md` require.
 

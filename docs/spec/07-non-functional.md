@@ -11,7 +11,7 @@
 ## Persistence
 
 - Stub definitions, groups, configuration history (ConfigRevisions), and received-request logs are stored in a **persistent store** (a database) that survives restarts.
-- Backup of mock definitions is handled at the application level via export/import (F8), independent of database-level backups.
+- Backup of mock definitions is handled at the application level via export/import (F7), independent of database-level backups.
 
 ## Concurrency and consistency
 
@@ -44,4 +44,4 @@ Operational limits are **configurable** (e.g. via environment variables / config
 ## Retention
 
 - Received-request logs and configuration history are bounded by the retention settings above rather than growing unbounded.
-- Pruning is automatic (age-based). Undo/redo depth (F7) is limited to the configuration history still within the retention window.
+- Pruning is automatic (age-based). Undo/redo depth (F6) is limited to the configuration history still within the retention window.
