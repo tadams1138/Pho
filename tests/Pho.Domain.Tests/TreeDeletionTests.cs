@@ -51,7 +51,7 @@ public class TreeDeletionTests
 
         var plan = TreeDeletion.Plan(tree, new[] { parent.Id });
 
-        plan.GroupIds.Should().Equal(parent.Id, "the cascade removes the descendants");
+        plan.GroupIds.Should().Equal(new[] { parent.Id }, "the cascade removes the descendants");
         plan.StubIds.Should().BeEmpty();
         plan.GroupCount.Should().Be(2);
         plan.StubCount.Should().Be(1);

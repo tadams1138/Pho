@@ -58,7 +58,7 @@ public class TreeMoveRulesTests
 
         var top = TreeMoveRules.TopMostGroups(new[] { parent, child, target }, new[] { parent.Id, child.Id });
 
-        top.Should().Equal(parent.Id, "the child rides along with its parent");
+        top.Should().Equal(new[] { parent.Id }, "the child rides along with its parent");
     }
 
     [Fact]

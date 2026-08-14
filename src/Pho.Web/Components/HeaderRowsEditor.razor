@@ -14,11 +14,11 @@
             <tr @key="row">
                 <td>
                     <input type="text" value="@row.Name" placeholder="Content-Type"
-                           @oninput="e => SetAsync(() => row.Name = e.Value?.ToString() ?? "")" />
+                           @oninput="e => SetAsync(() => row.Name = e.Value?.ToString() ?? string.Empty)" />
                 </td>
                 <td>
                     <input type="text" value="@row.Value" placeholder="application/json"
-                           @oninput="e => SetAsync(() => row.Value = e.Value?.ToString() ?? "")" />
+                           @oninput="e => SetAsync(() => row.Value = e.Value?.ToString() ?? string.Empty)" />
                 </td>
                 <td>
                     <button type="button" @onclick="() => SetAsync(() => Rows.Remove(row))">Remove</button>

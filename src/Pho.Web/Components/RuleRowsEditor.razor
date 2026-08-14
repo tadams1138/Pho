@@ -15,7 +15,7 @@
             <tr @key="row">
                 <td>
                     <input type="text" value="@row.Name" placeholder="@Placeholder"
-                           @oninput="e => SetAsync(() => row.Name = e.Value?.ToString() ?? "")" />
+                           @oninput="e => SetAsync(() => row.Name = e.Value?.ToString() ?? string.Empty)" />
                 </td>
                 <td>
                     <select value="@row.Type"
@@ -30,7 +30,7 @@
                     @if (ParamRuleDraft.TakesValue(row.Type))
                     {
                         <input type="text" value="@row.Value"
-                               @oninput="e => SetAsync(() => row.Value = e.Value?.ToString() ?? "")" />
+                               @oninput="e => SetAsync(() => row.Value = e.Value?.ToString() ?? string.Empty)" />
                     }
                     else
                     {

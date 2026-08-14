@@ -30,12 +30,12 @@
 
 <label>Name
     <input type="text" value="@Draft.Name" spellcheck="true"
-           @oninput="e => SetAsync(() => Draft.Name = e.Value?.ToString() ?? "")" />
+           @oninput="e => SetAsync(() => Draft.Name = e.Value?.ToString() ?? string.Empty)" />
 </label>
 
 <label>Description
     <input type="text" value="@Draft.Description" spellcheck="true"
-           @oninput="e => SetAsync(() => Draft.Description = e.Value?.ToString() ?? "")" />
+           @oninput="e => SetAsync(() => Draft.Description = e.Value?.ToString() ?? string.Empty)" />
 </label>
 
 <label>Group
@@ -78,7 +78,7 @@
 
 <label>Path
     <input type="text" value="@Draft.Path"
-           @oninput="e => SetAsync(() => Draft.Path = e.Value?.ToString() ?? "")" />
+           @oninput="e => SetAsync(() => Draft.Path = e.Value?.ToString() ?? string.Empty)" />
 </label>
 
 <h4>Query parameter rules</h4>
@@ -109,7 +109,7 @@
     @if (ParamRuleDraft.TakesValue(Draft.BodyMatchType))
     {
         <div>Request body value</div>
-        <BodyEditor Value="Draft.BodyMatchValue" ValueChanged="value => SetAsync(() => Draft.BodyMatchValue = value)" />
+        <BodyEditor Value="@Draft.BodyMatchValue" ValueChanged="value => SetAsync(() => Draft.BodyMatchValue = value)" />
     }
 }
 
@@ -124,7 +124,7 @@
 <HeaderRowsEditor Rows="Draft.ResponseHeaders" OnChanged="OnChanged" />
 
 <div>Response body</div>
-<BodyEditor Value="Draft.Body" ValueChanged="value => SetAsync(() => Draft.Body = value)" />
+<BodyEditor Value="@Draft.Body" ValueChanged="value => SetAsync(() => Draft.Body = value)" />
 
 @code {
     [Parameter] public required StubDraft Draft { get; set; }
