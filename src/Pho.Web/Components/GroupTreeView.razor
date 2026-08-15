@@ -1,8 +1,10 @@
 @inject IJSRuntime JS
 
 @* The stub tree, rendered from the flattened row list: multi-select with checkboxes and
-   ctrl/shift-click, arrow-key navigation, and drag-and-drop rearranging. Deleting is a toolbar
-   action over the selection, so rows carry no delete button of their own. *@
+   ctrl/shift-click, arrow-key navigation, and drag-and-drop rearranging. Deleting and
+   enabling/disabling are toolbar actions over the selection, so rows carry no buttons of their
+   own beyond the twisty. Every row is a single unwrapped line — the tree scrolls sideways for
+   long paths rather than reflowing. *@
 
 <div class="tree" tabindex="0" role="tree" aria-multiselectable="true" @ref="_treeElement"
      @onkeydown="OnKeyDownAsync"
@@ -29,7 +31,7 @@
 
             <input type="checkbox" class="row-select"
                    checked="@Selection.Contains(row.Id)"
-                   aria-label="Select @row.Name"
+                   aria-label="Select @row.Label"
                    @onclick:stopPropagation="true"
                    @onchange="() => OnToggleSelection.InvokeAsync(row)" />
 
@@ -48,15 +50,14 @@
             {
                 var stub = row.Stub!;
 
+                @* A named stub shows its name and nothing else; an unnamed one shows what it
+                   matches instead, so the row is never blank and never says the same thing twice. *@
                 <span class="twisty-spacer"></span>
-                <span class="stub-name">@stub.Name</span>
-                <span class="stub-summary">@stub.Request.Method @stub.Request.Path.Value</span>
-                <button type="button" class="enabled-toggle @(stub.Enabled ? "on" : "off")"
-                        title="@(stub.Enabled ? "Disable this stub" : "Enable this stub")"
-                        @onclick:stopPropagation="true"
-                        @onclick="() => OnToggleEnabled.InvokeAsync(new EnabledChange(stub, !stub.Enabled))">
-                    @(stub.Enabled ? "Enabled" : "Disabled")
-                </button>
+                <span class="stub-label @(StubLabel.HasName(stub) ? "stub-name" : "stub-summary")">@row.Label</span>
+                @if (!stub.Enabled)
+                {
+                    <span class="disabled-tag" title="This stub is ignored while matching">disabled</span>
+                }
             }
         </div>
     }
@@ -80,7 +81,6 @@
     [Parameter] public EventCallback<RowActivation> OnActivate { get; set; }
     [Parameter] public EventCallback<TreeRow> OnToggleSelection { get; set; }
     [Parameter] public EventCallback<Guid> OnToggleExpand { get; set; }
-    [Parameter] public EventCallback<EnabledChange> OnToggleEnabled { get; set; }
     [Parameter] public EventCallback<RowDrop> OnDrop { get; set; }
     [Parameter] public EventCallback OnDeleteSelection { get; set; }
 

@@ -45,6 +45,15 @@
     <button @onclick="RequestDelete" disabled="@_selection.IsEmpty">
         Delete selected@(_selection.IsEmpty ? "" : $" ({_selection.Count})")
     </button>
+    @* Enabling and disabling act on the whole selection — selecting a group takes its contents. *@
+    <button @onclick="() => SetSelectionEnabledAsync(true)" disabled="@(CountToSet(true) == 0)"
+            title="Enable every selected stub, including stubs inside selected groups">
+        Enable@(CountToSet(true) is var toEnable && toEnable > 0 ? $" ({toEnable})" : "")
+    </button>
+    <button @onclick="() => SetSelectionEnabledAsync(false)" disabled="@(CountToSet(false) == 0)"
+            title="Disable every selected stub, including stubs inside selected groups">
+        Disable@(CountToSet(false) is var toDisable && toDisable > 0 ? $" ({toDisable})" : "")
+    </button>
     <button @onclick="UndoAsync" disabled="@(!_canUndo)">Undo</button>
     <button @onclick="RedoAsync" disabled="@(!_canRedo)">Redo</button>
 </div>
@@ -80,6 +89,11 @@
         }
         else
         {
+            @* Expand/collapse scope to the selected groups, or the whole tree when nothing is selected. *@
+            <div class="toolbar tree-toolbar">
+                <button @onclick="ExpandScope" title="@ExpandHint("Expand")">Expand all</button>
+                <button @onclick="CollapseScope" title="@ExpandHint("Collapse")">Collapse all</button>
+            </div>
             <p class="hint muted">
                 Click to select, ctrl/cmd-click to add, shift-click for a range. Arrow keys navigate;
                 ← / → collapse and expand; space toggles selection. Drag rows to rearrange the tree.
@@ -90,7 +104,6 @@
                            OnActivate="OnActivateAsync"
                            OnToggleSelection="OnToggleSelectionAsync"
                            OnToggleExpand="ToggleExpand"
-                           OnToggleEnabled="ToggleEnabledAsync"
                            OnDrop="OnDropAsync"
                            OnDeleteSelection="RequestDelete" />
         }
@@ -130,6 +143,9 @@
     private GroupNode? _tree;
     private IReadOnlyList<TreeRow> _rows = Array.Empty<TreeRow>();
     private readonly HashSet<Guid> _collapsed = new();
+
+    // The tree opens fully collapsed, so a large configuration starts as a short list of groups.
+    private bool _expansionInitialized;
 
     private TreeSelection _selection = TreeSelection.Empty;
     private Guid? _activeId;
@@ -177,6 +193,13 @@
         _groups = await GroupSvc.ListAsync();
         _stubs = await StubSvc.ListAsync();
         _tree = GroupTree.Build(_groups, _stubs);
+
+        if (!_expansionInitialized)
+        {
+            _expansionInitialized = true;
+            CollapseEverything();
+        }
+
         _rows = TreeFlattener.Flatten(_tree, _collapsed);
 
         _selection = _selection.Retain(_rows.Select(r => r.Id));
@@ -263,6 +286,38 @@
         if (!_collapsed.Remove(groupId)) _collapsed.Add(groupId);
         _rows = TreeFlattener.Flatten(_tree!, _collapsed);
     }
+
+    // ---- expand / collapse -----------------------------------------------------------------
+
+    private void ExpandScope() => SetExpanded(true);
+
+    private void CollapseScope() => SetExpanded(false);
+
+    private void SetExpanded(bool expanded)
+    {
+        if (_tree is null) return;
+
+        foreach (var groupId in TreeExpansion.Scope(_tree, _selection.Ids))
+        {
+            if (expanded) _collapsed.Remove(groupId);
+            else _collapsed.Add(groupId);
+        }
+
+        _rows = TreeFlattener.Flatten(_tree, _collapsed);
+    }
+
+    private void CollapseEverything()
+    {
+        if (_tree is null) return;
+
+        _collapsed.Clear();
+        foreach (var groupId in TreeExpansion.AllGroupIds(_tree)) _collapsed.Add(groupId);
+    }
+
+    private string ExpandHint(string verb)
+        => _selection.IsEmpty
+            ? $"{verb} every group"
+            : $"{verb} the selected groups and everything inside them";
 
     // ---- unsaved-changes prompt ------------------------------------------------------------
 
@@ -353,6 +408,9 @@
     {
         if (_draft is null) return true;
 
+        // A stub left unnamed is saved under its method and path, so the first save needs no typing.
+        _draft.ApplyDefaultName();
+
         _errors = _draft.Validate();
         if (_errors.Count > 0) return false;
 
@@ -393,14 +451,28 @@
         SyncEditorToSelection();
     });
 
-    private async Task ToggleEnabledAsync(EnabledChange change)
-    {
-        await StubSvc.SetEnabledAsync(change.Stub.Id, change.Enabled);
-        var verb = change.Enabled ? "Enabled" : "Disabled";
-        await RecordAndReloadAsync($"{verb} stub '{change.Stub.Name}'");
+    /// <summary>The stubs the selection covers — stubs picked directly, plus those inside selected groups.</summary>
+    private IReadOnlyList<Stub> SelectedStubs()
+        => _tree is null ? Array.Empty<Stub>() : TreeStubSelection.Collect(_tree, _selection.Ids);
 
-        // Keep an open, unedited editor in step with the row's toggle.
-        if (_draft is { Id: Guid id } && id == change.Stub.Id && !IsDirty) SyncEditorToSelection();
+    /// <summary>How many selected stubs the Enable / Disable button would actually change.</summary>
+    private int CountToSet(bool enabled) => SelectedStubs().Count(s => s.Enabled != enabled);
+
+    private async Task SetSelectionEnabledAsync(bool enabled)
+    {
+        var targets = SelectedStubs().Where(s => s.Enabled != enabled).ToList();
+        if (targets.Count == 0) return;
+
+        foreach (var stub in targets) await StubSvc.SetEnabledAsync(stub.Id, enabled);
+
+        // One revision for the whole batch, so undo puts them all back together.
+        var verb = enabled ? "Enabled" : "Disabled";
+        await RecordAndReloadAsync(targets.Count == 1
+            ? $"{verb} stub '{StubLabel.For(targets[0])}'"
+            : $"{verb} {targets.Count} stubs");
+
+        // Keep an open, unedited editor in step with the change.
+        if (_draft is { Id: Guid id } && targets.Any(t => t.Id == id) && !IsDirty) SyncEditorToSelection();
     }
 
     // ---- groups, deleting, moving ----------------------------------------------------------
@@ -464,7 +536,7 @@
         if (targetGroupId is Guid group) _collapsed.Remove(group);
 
         await RecordAndReloadAsync(moved == 1
-            ? $"Moved '{drop.Dragged.Name}' to {destination}"
+            ? $"Moved '{drop.Dragged.Label}' to {destination}"
             : $"Moved {moved} rows to {destination}");
     }
 
@@ -499,6 +571,10 @@
             _draft = null;
             _baseline = null;
             await LoadAsync();
+
+            // An import replaces the tree wholesale; start it collapsed, as the app does.
+            CollapseEverything();
+            _rows = TreeFlattener.Flatten(_tree!, _collapsed);
         }
         catch (Exception ex)
         {

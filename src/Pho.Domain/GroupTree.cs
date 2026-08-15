@@ -28,7 +28,9 @@ public static class GroupTree
 
         var nodeStubs = stubs
             .Where(s => s.GroupId == id)
-            .OrderBy(s => s.Name, StringComparer.OrdinalIgnoreCase)
+            // By the label the tree shows, so unnamed stubs sort by method and path rather than
+            // clumping together under an empty name.
+            .OrderBy(StubLabel.For, StringComparer.OrdinalIgnoreCase)
             .ToList();
 
         return new GroupNode(group, children, nodeStubs);

@@ -28,8 +28,9 @@
     </ul>
 }
 
+@* Left blank, the name is filled in from the method and path when the stub is saved. *@
 <label>Name
-    <input type="text" value="@Draft.Name" spellcheck="true"
+    <input type="text" value="@Draft.Name" spellcheck="true" placeholder="@Draft.DefaultName"
            @oninput="e => SetAsync(() => Draft.Name = e.Value?.ToString() ?? string.Empty)" />
 </label>
 

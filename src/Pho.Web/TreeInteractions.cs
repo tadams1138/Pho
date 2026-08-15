@@ -14,8 +14,5 @@ public sealed record RowActivation(TreeRow Row, bool Ctrl = false, bool Shift = 
 /// </summary>
 public sealed record RowDrop(TreeRow Dragged, TreeRow? Target);
 
-/// <summary>A change to a stub's enabled state from its row's quick toggle.</summary>
-public sealed record EnabledChange(Stub Stub, bool Enabled);
-
 /// <summary>A group as offered in a picker, indented to show where it sits in the tree.</summary>
 public sealed record GroupOption(Guid Id, string Label);

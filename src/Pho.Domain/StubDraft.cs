@@ -74,6 +74,18 @@ public sealed class StubDraft
 
     public static StubDraft ForNewStub(Guid? groupId = null) => new() { GroupId = groupId };
 
+    /// <summary>The name a stub falls back to when the author leaves the box blank: "POST /sessions".</summary>
+    public string DefaultName => StubLabel.ForRequest(Method, Path);
+
+    /// <summary>
+    /// Fills a blank name in from the request before saving, so authoring a stub never demands a
+    /// name the method and path already state. See docs/spec/05-screens-and-flows.md (stub editor).
+    /// </summary>
+    public void ApplyDefaultName()
+    {
+        if (string.IsNullOrWhiteSpace(Name)) Name = DefaultName;
+    }
+
     public static StubDraft From(Stub stub) => new()
     {
         Id = stub.Id,

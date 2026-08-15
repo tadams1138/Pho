@@ -12,6 +12,7 @@ Test authors create and maintain stubs through the web UI.
   - Given I am on the stub editor
   - When I define a request matcher (method + path, plus optional query/header/body rules) and a response (status, headers, body) and save
   - Then the stub is persisted and appears in the stub list
+  - And a name I did not type is filled in from the method and path (e.g. "POST /sessions"), so naming is never a precondition for saving
 - **Validation**
   - Given I try to save a stub without a path matcher (or without a response status)
   - Then saving is rejected with a clear validation message and nothing is persisted
@@ -56,6 +57,11 @@ A stub can be toggled on or off without being deleted or rewritten, so a user ca
   - Given two stubs for the same endpoint returning different responses, one enabled and one disabled
   - When I flip which one is enabled
   - Then the endpoint's response switches accordingly, with no edits to either response body
+- **Enable or disable many at once**
+  - Given a selection of tree rows — stubs, groups, or both
+  - When I use the toolbar's **enable** or **disable** action
+  - Then every stub the selection covers is flipped, including stubs nested inside a selected group, as **one** undoable change
+  - And the action is offered only while it would change something (nothing to enable when every selected stub is already enabled)
 
 ## F3 — Organize stubs into nested groups
 
@@ -92,6 +98,11 @@ Stubs are arranged in a tree of user-defined groups for organizational purposes.
   - Then I am first told how much will be removed (counting everything nested inside selected groups), and on confirmation all of it is deleted as one undoable change
   - And rows already covered by a selected group are not deleted twice
   - _(Deleting is a single toolbar action over the selection; individual rows carry no delete button.)_
+- **Expand and collapse in bulk**
+  - Given the stub tree, which opens with every group collapsed
+  - When I choose **expand all** or **collapse all** with nothing selected
+  - Then every group in the tree opens or closes
+  - And when groups are selected, only those groups and the groups nested under them are opened or closed
 - **Grouping does not affect matching**
   - Given stubs in any groups
   - Then request matching (F4) behaves identically regardless of grouping

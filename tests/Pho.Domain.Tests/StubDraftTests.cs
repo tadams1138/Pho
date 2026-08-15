@@ -149,6 +149,41 @@ public class StubDraftTests
     }
 
     [Fact]
+    public void A_blank_name_is_filled_in_from_the_method_and_path_on_save()
+    {
+        var draft = StubDraft.ForNewStub();
+        draft.Method = HttpMethodMatch.Post;
+        draft.Path = "/sessions";
+
+        draft.ApplyDefaultName();
+
+        draft.Name.Should().Be("POST /sessions");
+        draft.Validate().Should().BeEmpty();
+    }
+
+    [Fact]
+    public void A_name_the_author_typed_survives_the_default()
+    {
+        var draft = StubDraft.ForNewStub();
+        draft.Name = "login";
+        draft.Path = "/sessions";
+
+        draft.ApplyDefaultName();
+
+        draft.Name.Should().Be("login");
+    }
+
+    [Fact]
+    public void The_default_name_tracks_the_method_and_path_being_edited()
+    {
+        var draft = StubDraft.ForNewStub();
+        draft.Method = HttpMethodMatch.Delete;
+        draft.Path = "/users/7";
+
+        draft.DefaultName.Should().Be("DELETE /users/7");
+    }
+
+    [Fact]
     public void A_valid_draft_reports_no_errors()
     {
         StubDraft.From(Existing()).Validate().Should().BeEmpty();

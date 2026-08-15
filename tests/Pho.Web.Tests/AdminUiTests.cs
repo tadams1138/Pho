@@ -88,11 +88,66 @@ public class AdminUiTests
 
         var html = await client.GetStringAsync("/");
 
-        html.Should().Contain("Vendor1").And.Contain("login");
+        html.Should().Contain("Vendor1");
         html.Should().Contain("draggable=\"true\"", "rows are rearranged by dragging");
         html.Should().Contain("Delete selected", "deleting is a toolbar action over the selection");
         html.Should().NotContain(">Delete group<").And.NotContain(">Delete<");
     }
+
+    [Fact]
+    public async Task Groups_start_collapsed_and_can_be_expanded_or_collapsed_in_bulk()
+    {
+        var group = new Group { Name = "Vendor1" };
+        var client = AdminClient(new[] { group }, new[] { StubIn(group.Id, "login", "/login") });
+
+        var html = await client.GetStringAsync("/");
+
+        html.Should().Contain("Vendor1");
+        html.Should().NotContain("login", "the app opens with every group collapsed");
+        html.Should().Contain("Expand all").And.Contain("Collapse all");
+    }
+
+    [Fact]
+    public async Task Enabling_and_disabling_are_toolbar_actions_over_the_selection()
+    {
+        var client = AdminClient(stubs: new[] { StubIn(null, "login", "/login") });
+
+        var html = await client.GetStringAsync("/");
+
+        html.Should().Contain("Delete selected");
+        html.Should().MatchRegex(@">\s*Enable").And.MatchRegex(@">\s*Disable");
+        html.Should().NotContain("enabled-toggle", "a stub's enabled state is not toggled row by row");
+    }
+
+    [Fact]
+    public async Task An_unnamed_stub_shows_its_method_and_path_in_the_tree()
+    {
+        var client = AdminClient(stubs: new[] { StubIn(null, name: "", path: "/sessions") });
+
+        var html = await client.GetStringAsync("/");
+
+        html.Should().Contain("GET /sessions");
+    }
+
+    [Fact]
+    public async Task A_named_stub_shows_only_its_name_in_the_tree()
+    {
+        var client = AdminClient(stubs: new[] { StubIn(null, "login", "/sessions") });
+
+        var html = await client.GetStringAsync("/");
+
+        html.Should().Contain("login");
+        html.Should().NotContain("GET /sessions", "a named row does not repeat what it matches");
+    }
+
+    private static Stub StubIn(Guid? groupId, string name, string path)
+        => new()
+        {
+            Name = name,
+            GroupId = groupId,
+            Request = new RequestMatcher { Method = HttpMethodMatch.Get, Path = new PathMatcher(PathMatchType.Exact, path) },
+            Response = new ResponseDefinition()
+        };
 
     [Fact]
     public async Task The_stub_editor_lives_beside_the_tree_rather_than_on_its_own_page()

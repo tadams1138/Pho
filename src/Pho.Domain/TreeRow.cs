@@ -41,6 +41,12 @@ public sealed record TreeRow
 
     public string Name => Kind == TreeRowKind.Group ? Group!.Name : Stub!.Name;
 
+    /// <summary>
+    /// What the row shows: a group's name, a stub's name, or — for a stub with no name of its own —
+    /// its method and path (see <see cref="StubLabel"/>), so a row is never blank.
+    /// </summary>
+    public string Label => Kind == TreeRowKind.Group ? Group!.Name : StubLabel.For(Stub!);
+
     /// <summary>The group a drop onto this row targets: the group itself, or a stub's group.</summary>
     public Guid? DropTargetGroupId => Kind == TreeRowKind.Group ? Group!.Id : ParentGroupId;
 }
