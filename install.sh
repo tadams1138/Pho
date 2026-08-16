@@ -59,6 +59,12 @@ if [ "$ADMIN_PORT" = "$MOCK_PORT" ]; then
   exit 1
 fi
 
+# --- Reverse-proxy sub-path (press [Enter] if there isn't one) ------------
+# Only needed when a proxy mounts the admin UI under a path and does not send
+# X-Forwarded-Prefix (IIS URL Rewrite, for one, does not). Leading/trailing
+# slashes are optional — the app normalises them.
+read -rp "Sub-path the admin UI is reached through, e.g. /Pho/admin [none]: " PATH_BASE </dev/tty || PATH_BASE=""
+
 # --- Obtain the project (only if not already inside a checkout) -----------
 # `docker compose --build` needs the full source tree, not just the compose
 # file. Prefer git if present; otherwise download a source tarball with
@@ -99,6 +105,7 @@ fi
 cat > .env <<EOF
 PHO_ADMIN_PORT=${ADMIN_PORT}
 PHO_MOCK_PORT=${MOCK_PORT}
+PHO_PATH_BASE=${PATH_BASE}
 EOF
 
 # --- Build and start ------------------------------------------------------
@@ -108,7 +115,7 @@ $COMPOSE up -d --build
 cat <<EOF
 
 Pho is running:
-  Admin UI:       http://localhost:${ADMIN_PORT}
+  Admin UI:       http://localhost:${ADMIN_PORT}${PATH_BASE}
   Mock surface:   http://localhost:${MOCK_PORT}
 
 Manage it from this directory:

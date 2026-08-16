@@ -85,9 +85,29 @@ nothing in the app hardcodes a prefix. Tell it what the prefix is in one of two 
   }
   ```
 
-- **Or configure it** — for a proxy that strips the prefix without saying so, set
-  `Pho__PathBase=/Pho` in the environment (`/Pho`, `Pho`, and `/Pho/` are all accepted). This also
-  covers a proxy that passes the prefix straight through.
+- **Or configure it** — for a proxy that strips the prefix without saying so, set the sub-path in
+  `.env` next to `docker-compose.yml` and redeploy (`/Pho/admin`, `Pho/admin`, and `/Pho/admin/` are
+  all accepted):
+
+  ```bash
+  echo "PHO_PATH_BASE=/Pho/admin" >> .env
+  docker compose up -d
+  ```
+
+  `install.sh` also prompts for it. This route covers a proxy that passes the prefix straight
+  through as well.
+
+**IIS URL Rewrite / ARR sends no `X-Forwarded-Prefix`**, so a rewrite like this one needs
+`PHO_PATH_BASE=/Pho/admin`:
+
+```xml
+<rule name="AdminReverseProxy" stopProcessing="true">
+  <match url="^admin/?(.*)$" />
+  <action type="Rewrite" url="http://pho-host:8931/{R:1}" />
+</rule>
+```
+
+(The alternative is teaching IIS to send the header — `<serverVariables><set name="HTTP_X_FORWARDED_PREFIX" value="/Pho/admin" /></serverVariables>` on the rule — but that also requires allow-listing the variable in `applicationHost.config`, so the environment variable is usually the shorter road.)
 
 Only the admin surface is affected; a prefix never changes what the mock-serving port matches.
 

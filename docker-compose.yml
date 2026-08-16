@@ -12,6 +12,10 @@ services:
       - "${PHO_MOCK_PORT:-8932}:8932"    # mock-serving surface
     environment:
       - ConnectionStrings__Pho=Data Source=/data/pho.db
+      # Sub-path the admin UI is reached through, when a reverse proxy mounts it under one
+      # (e.g. PHO_PATH_BASE=/Pho/admin). Empty means served at a host root. Only needed for a proxy
+      # that does not send X-Forwarded-Prefix — IIS URL Rewrite, for one, does not.
+      - Pho__PathBase=${PHO_PATH_BASE:-}
     volumes:
       - pho-data:/data
     restart: unless-stopped
