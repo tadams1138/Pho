@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http;
+using Regex = System.Text.RegularExpressions.Regex;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.AspNetCore.Hosting;
@@ -14,11 +15,18 @@ public class AdminUiTests
 {
     // Default traffic policy: under TestServer the local port is 0 (not the mock port),
     // so requests are treated as admin traffic and served by the Blazor UI.
-    private static HttpClient AdminClient(IEnumerable<Group>? groups = null, IEnumerable<Stub>? stubs = null)
+    private static HttpClient AdminClient(
+        IEnumerable<Group>? groups = null,
+        IEnumerable<Stub>? stubs = null,
+        string? pathBase = null)
     {
         var factory = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
         {
             builder.UseEnvironment("Testing");
+            if (pathBase is not null)
+            {
+                builder.UseSetting("Pho:PathBase", pathBase);
+            }
             // Static web assets only auto-load in Development; load them here so
             // UseStaticFiles can serve _framework/blazor.web.js under Testing.
             builder.UseStaticWebAssets();
@@ -46,6 +54,55 @@ public class AdminUiTests
     }
 
     [Fact]
+    public async Task Every_link_the_page_emits_is_relative_so_it_survives_a_sub_path_proxy()
+    {
+        var client = AdminClient();
+
+        var html = await client.GetStringAsync("/");
+
+        // An absolute link resolves to the proxy's root, dropping the prefix it was reached through.
+        // The <base> element is the one absolute href on the page — it is what the rest resolve against.
+        var links = Regex.Replace(html, "<base [^>]*>", "");
+        links.Should().NotContain("href=\"/", "app links must resolve against the <base href>, not the host root");
+        links.Should().NotContain("src=\"/", "the Blazor script must load relative to the <base href> too");
+        html.Should().Contain("src=\"_framework/blazor.web.js\"");
+    }
+
+    [Fact]
+    public async Task Served_at_a_host_root_the_base_href_is_just_a_slash()
+    {
+        var client = AdminClient();
+
+        var html = await client.GetStringAsync("/");
+
+        html.Should().Contain("<base href=\"/\"");
+    }
+
+    [Fact]
+    public async Task A_proxy_announcing_the_prefix_it_stripped_moves_the_base_href_under_it()
+    {
+        var client = AdminClient();
+        client.DefaultRequestHeaders.Add("X-Forwarded-Prefix", "/Pho");
+
+        var html = await client.GetStringAsync("/");
+
+        html.Should().Contain("<base href=\"/Pho/\"", "relative links then resolve under the proxy's sub-path");
+    }
+
+    [Theory]
+    [InlineData("/mocks")]
+    [InlineData("mocks")]
+    [InlineData("/mocks/")]
+    public async Task The_prefix_can_be_configured_for_a_proxy_that_strips_it_silently(string configured)
+    {
+        var client = AdminClient(pathBase: configured);
+
+        var html = await client.GetStringAsync("/");
+
+        html.Should().Contain("<base href=\"/mocks/\"", "the prefix is accepted however it is written");
+    }
+
+    [Fact]
     public async Task Blazor_script_is_served_with_a_real_body()
     {
         var client = AdminClient();
@@ -64,7 +121,7 @@ public class AdminUiTests
 
         var html = await client.GetStringAsync("/");
 
-        var export = html.IndexOf("/export", StringComparison.Ordinal);
+        var export = html.IndexOf("\"export\"", StringComparison.Ordinal);
         var newStub = html.IndexOf("New stub", StringComparison.Ordinal);
         var tree = html.IndexOf("class=\"tree\"", StringComparison.Ordinal);
 

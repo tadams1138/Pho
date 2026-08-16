@@ -29,6 +29,17 @@ A core constraint (see `06-interfaces.md`): the **mock-serving surface** must be
 
 Both ports are configurable. Kestrel listens on both; middleware branches by port.
 
+## Hosting behind a reverse proxy (decided)
+
+The admin UI must work when a reverse proxy mounts it under a **sub-path** (e.g. `https://host/Pho/`) as well as at a host root. **Decision: nothing in the app hardcodes a prefix.**
+
+- **Every link the UI emits is relative** — to the `<base href>` the page renders, never to `/`. That covers the navigation, the export download, and the Blazor script (`_framework/blazor.web.js`); a link written as `/received` would resolve to the proxy's root and 404, so absolute app links are a defect.
+- **The base href is the request's `PathBase`**, plus a trailing slash, and `/` when there is none. Direct access is therefore unchanged.
+- `PathBase` is established in one of two ways, both **admin-surface only** — the mock-serving branch is left untouched, so a prefix never alters what a stub matches:
+  - the proxy announces the prefix it stripped via **`X-Forwarded-Prefix`** (with `X-Forwarded-Proto` / `X-Forwarded-Host` honoured alongside it); or
+  - the prefix is configured as **`Pho:PathBase`**, for proxies that strip it silently.
+- Forwarded headers are accepted from any proxy address, since Pho sits on a test network behind one and the headers only affect link generation.
+
 ## Docker Compose topology
 
 With SQLite there is a **single service**:

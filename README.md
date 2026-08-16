@@ -64,6 +64,33 @@ echo -e "PHO_ADMIN_PORT=18931\nPHO_MOCK_PORT=18932" > .env
 docker compose up -d
 ```
 
+### Behind a reverse proxy
+
+The admin UI works unchanged when a proxy mounts it under a sub-path (e.g. `https://host/Pho/`).
+Every link it emits is relative to the page's `<base href>`, and that base comes from the request —
+nothing in the app hardcodes a prefix. Tell it what the prefix is in one of two ways:
+
+- **The proxy announces it** — forward `X-Forwarded-Prefix: /Pho` (alongside the usual
+  `X-Forwarded-Proto` / `X-Forwarded-Host`). Nothing to configure in Pho. For nginx:
+
+  ```nginx
+  location /Pho/ {
+      proxy_pass         http://pho-host:8931/;   # trailing slash: nginx strips the prefix
+      proxy_set_header   X-Forwarded-Prefix /Pho;
+      proxy_set_header   X-Forwarded-Proto  $scheme;
+      proxy_set_header   X-Forwarded-Host   $host;
+      proxy_http_version 1.1;                     # the UI is Blazor Server — it needs the WebSocket
+      proxy_set_header   Upgrade    $http_upgrade;
+      proxy_set_header   Connection "upgrade";
+  }
+  ```
+
+- **Or configure it** — for a proxy that strips the prefix without saying so, set
+  `Pho__PathBase=/Pho` in the environment (`/Pho`, `Pho`, and `/Pho/` are all accepted). This also
+  covers a proxy that passes the prefix straight through.
+
+Only the admin surface is affected; a prefix never changes what the mock-serving port matches.
+
 The SQLite database is stored on a named Docker volume and persists across restarts.
 
 ```bash

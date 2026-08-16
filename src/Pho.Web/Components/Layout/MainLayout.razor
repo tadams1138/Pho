@@ -4,8 +4,9 @@
     <header>
         <h1>Pho — Mock Web Service</h1>
         <nav>
-            <a href="/">Stubs</a>
-            <a href="/received">Received requests</a>
+            @* Relative to the page's <base href>, so the links survive a sub-path reverse proxy. *@
+            <a href="./">Stubs</a>
+            <a href="received">Received requests</a>
             <span class="theme-toggle">
                 Theme:
                 <button type="button" onclick="phoSetTheme('light')">Light</button>

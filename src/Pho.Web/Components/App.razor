@@ -3,7 +3,10 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <base href="/" />
+    @* Everything the UI links to is relative to this. A reverse proxy may mount the app under a
+       sub-path, which arrives as the request's PathBase; served at a host root this is just "/".
+       See docs/spec/08-architecture.md (Hosting behind a reverse proxy). *@
+    <base href="@BaseHref" />
     <title>Pho — Mock Web Service</title>
     <style>
         :root { --bg: #ffffff; --fg: #1a1a1a; --border: #e5e5e5; --muted: #666; --accent: #0b5; --err: #b00020; }
@@ -159,3 +162,19 @@
     <script src="_framework/blazor.web.js"></script>
 </body>
 </html>
+
+@code {
+    [CascadingParameter] private HttpContext? HttpContext { get; set; }
+
+    /// <summary>The sub-path the app is being served under, slash-terminated; "/" at a host root.</summary>
+    private string BaseHref
+    {
+        get
+        {
+            var pathBase = HttpContext?.Request.PathBase.Value;
+            if (string.IsNullOrEmpty(pathBase)) return "/";
+
+            return pathBase.EndsWith('/') ? pathBase : pathBase + "/";
+        }
+    }
+}
