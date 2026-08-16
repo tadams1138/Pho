@@ -85,6 +85,21 @@
         .confirm-bar { border: 1px solid var(--err); border-radius: 4px; padding: 0.5rem 0.6rem; margin-bottom: 1rem;
                        display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
         .confirm-bar.unsaved { border-color: var(--accent); }
+        /* Path + its match type on one line; the path takes the slack. */
+        .field-row { display: flex; gap: 0.8rem; align-items: flex-end; flex-wrap: wrap; }
+        .field-row > label { margin: 0.6rem 0; }
+        .field-row > label.grow { flex: 1 1 18rem; }
+        .field-row > label.grow input { max-width: none; }
+
+        /* Collapsible rule sections: open only when the stub has rules of that kind. */
+        details.section { border: 1px solid var(--border); border-radius: 4px; padding: 0.35rem 0.6rem; margin: 0.6rem 0; }
+        details.section > summary { cursor: pointer; font-weight: 600; }
+        details.section[open] > summary { margin-bottom: 0.5rem; }
+        details.section > summary::marker { color: var(--muted); }
+        .auth-helper { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;
+                       margin-top: 0.6rem; padding-top: 0.5rem; border-top: 1px dashed var(--border); }
+        .auth-helper input { width: auto; max-width: 11rem; }
+
         table.rules { margin: 0.2rem 0 0.4rem; }
         table.rules input, table.rules select { max-width: 14rem; }
         table.rules th { font-size: 0.8rem; color: var(--muted); }

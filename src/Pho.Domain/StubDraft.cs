@@ -144,6 +144,29 @@ public sealed class StubDraft
            && ResponseHeaders.SequenceEqual(other.ResponseHeaders)
            && Body == other.Body;
 
+    /// <summary>
+    /// Points the draft's Authorization header rule at a Basic credential built from these two,
+    /// replacing any Authorization rule already there rather than adding a second one (two rules on
+    /// one header could never both match). See <see cref="BasicAuth"/> and F12.
+    /// </summary>
+    public void SetBasicAuth(string userId, string password)
+    {
+        var existing = FindAuthorizationRule();
+        var rule = existing ?? new ParamRuleDraft { Name = BasicAuth.HeaderName };
+
+        rule.Type = MatchRuleType.Equals;
+        rule.Value = BasicAuth.Encode(userId, password);
+
+        if (existing is null) RequestHeaders.Add(rule);
+    }
+
+    /// <summary>The Basic credential the draft already matches on, or null when it has none.</summary>
+    public BasicCredentials? CurrentBasicAuth() => BasicAuth.Decode(FindAuthorizationRule()?.Value);
+
+    private ParamRuleDraft? FindAuthorizationRule()
+        => RequestHeaders.FirstOrDefault(r =>
+            string.Equals(r.Name.Trim(), BasicAuth.HeaderName, StringComparison.OrdinalIgnoreCase));
+
     /// <summary>Blocking validation errors; empty means the draft can be saved.</summary>
     public IReadOnlyList<string> Validate()
     {

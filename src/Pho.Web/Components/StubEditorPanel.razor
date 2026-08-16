@@ -39,17 +39,7 @@
            @oninput="e => SetAsync(() => Draft.Description = e.Value?.ToString() ?? string.Empty)" />
 </label>
 
-<label>Group
-    <select value="@(Draft.GroupId?.ToString() ?? "")"
-            @onchange="e => SetAsync(() => Draft.GroupId = ParseGuid(e.Value))">
-        <option value="">(none — top level)</option>
-        @foreach (var group in Groups)
-        {
-            <option value="@group.Id">@group.Label</option>
-        }
-    </select>
-</label>
-
+@* No group control: the tree already shows where the stub lives, and a stub is moved by dragging it. *@
 <label class="inline">
     <input type="checkbox" checked="@Draft.Enabled"
            @onchange="e => SetAsync(() => Draft.Enabled = (bool)e.Value!)" /> Enabled
@@ -67,27 +57,59 @@
     </select>
 </label>
 
-<label>Path match type
-    <select value="@Draft.PathType"
-            @onchange="e => SetAsync(() => Draft.PathType = Enum.Parse<PathMatchType>(e.Value!.ToString()!))">
-        @foreach (var type in Enum.GetValues<PathMatchType>())
+@* Path and its match type share a line — the type qualifies the path rather than standing alone. *@
+<div class="field-row">
+    <label class="grow">Path
+        <input type="text" value="@Draft.Path"
+               @oninput="e => SetAsync(() => Draft.Path = e.Value?.ToString() ?? string.Empty)" />
+    </label>
+    <label>Path match type
+        <select value="@Draft.PathType"
+                @onchange="e => SetAsync(() => Draft.PathType = Enum.Parse<PathMatchType>(e.Value!.ToString()!))">
+            @foreach (var type in Enum.GetValues<PathMatchType>())
+            {
+                <option value="@type">@type</option>
+            }
+        </select>
+    </label>
+</div>
+
+@* The repeatable sections open only when the stub actually has rules of that kind, so an ordinary
+   stub is a short form rather than three empty tables. *@
+<details class="section" open="@(Draft.QueryParams.Count > 0)">
+    <summary>Query parameter rules @Count(Draft.QueryParams.Count)</summary>
+    <RuleRowsEditor Rows="Draft.QueryParams" Noun="Query parameter" Placeholder="page" OnChanged="OnChanged" />
+</details>
+
+<details class="section" open="@(Draft.RequestHeaders.Count > 0)">
+    <summary>Header rules @Count(Draft.RequestHeaders.Count)</summary>
+    <p class="muted">A stub only matches when every header rule matches; header names are compared case-insensitively.</p>
+    <RuleRowsEditor Rows="Draft.RequestHeaders" Noun="Header" Placeholder="Authorization" OnChanged="OnChanged" />
+
+    @* Basic auth helper (F12): base64 is not something to do by hand mid-test. *@
+    <div class="auth-helper">
+        <span class="toolbar-label">Basic auth</span>
+        <label class="inline">User ID
+            <input type="text" value="@_basicUserId" autocomplete="off"
+                   @oninput="e => _basicUserId = e.Value?.ToString() ?? string.Empty" />
+        </label>
+        <label class="inline">Password
+            <input type="text" value="@_basicPassword" autocomplete="off"
+                   @oninput="e => _basicPassword = e.Value?.ToString() ?? string.Empty" />
+        </label>
+        <button type="button" disabled="@(_basicUserId.Length == 0 && _basicPassword.Length == 0)"
+                title="Base64-encode these as user:password and set the Authorization header rule"
+                @onclick="ApplyBasicAuthAsync">
+            Set Authorization header
+        </button>
+        @if (Draft.CurrentBasicAuth() is not null)
         {
-            <option value="@type">@type</option>
+            <span class="muted" title="@BasicAuth.Describe(CurrentAuthorizationValue())">
+                Matching a Basic credential — hover to read it
+            </span>
         }
-    </select>
-</label>
-
-<label>Path
-    <input type="text" value="@Draft.Path"
-           @oninput="e => SetAsync(() => Draft.Path = e.Value?.ToString() ?? string.Empty)" />
-</label>
-
-<h4>Query parameter rules</h4>
-<RuleRowsEditor Rows="Draft.QueryParams" Noun="Query parameter" Placeholder="page" OnChanged="OnChanged" />
-
-<h4>Header rules</h4>
-<p class="muted">A stub only matches when every header rule matches; header names are compared case-insensitively.</p>
-<RuleRowsEditor Rows="Draft.RequestHeaders" Noun="Header" Placeholder="Authorization" OnChanged="OnChanged" />
+    </div>
+</details>
 
 <h4>Body rule</h4>
 <label class="inline">
@@ -121,15 +143,16 @@
            @oninput="e => SetAsync(() => Draft.Status = ParseStatus(e.Value, Draft.Status))" />
 </label>
 
-<h4>Response headers</h4>
-<HeaderRowsEditor Rows="Draft.ResponseHeaders" OnChanged="OnChanged" />
+<details class="section" open="@(Draft.ResponseHeaders.Count > 0)">
+    <summary>Response headers @Count(Draft.ResponseHeaders.Count)</summary>
+    <HeaderRowsEditor Rows="Draft.ResponseHeaders" OnChanged="OnChanged" />
+</details>
 
 <div>Response body</div>
 <BodyEditor Value="@Draft.Body" ValueChanged="value => SetAsync(() => Draft.Body = value)" />
 
 @code {
     [Parameter] public required StubDraft Draft { get; set; }
-    [Parameter] public required IReadOnlyList<GroupOption> Groups { get; set; }
     [Parameter] public bool IsDirty { get; set; }
     [Parameter] public bool IsNew { get; set; }
     [Parameter] public IReadOnlyList<string> Errors { get; set; } = Array.Empty<string>();
@@ -142,14 +165,36 @@
     [Parameter] public EventCallback OnDuplicate { get; set; }
     [Parameter] public EventCallback OnClose { get; set; }
 
+    private StubDraft? _shownDraft;
+    private string _basicUserId = "";
+    private string _basicPassword = "";
+
+    protected override void OnParametersSet()
+    {
+        // A different draft (another stub, or a reverted copy) refills the auth boxes from whatever
+        // credential that stub already matches on, so an existing one can be edited rather than retyped.
+        if (ReferenceEquals(_shownDraft, Draft)) return;
+
+        _shownDraft = Draft;
+        var credentials = Draft.CurrentBasicAuth();
+        _basicUserId = credentials?.UserId ?? "";
+        _basicPassword = credentials?.Password ?? "";
+    }
+
     private Task SetAsync(Action apply)
     {
         apply();
         return OnChanged.InvokeAsync();
     }
 
-    private static Guid? ParseGuid(object? value)
-        => Guid.TryParse(value?.ToString(), out var id) ? id : null;
+    private Task ApplyBasicAuthAsync() => SetAsync(() => Draft.SetBasicAuth(_basicUserId, _basicPassword));
+
+    private string? CurrentAuthorizationValue()
+        => Draft.RequestHeaders
+            .FirstOrDefault(r => string.Equals(r.Name.Trim(), BasicAuth.HeaderName, StringComparison.OrdinalIgnoreCase))
+            ?.Value;
+
+    private static string Count(int count) => count == 0 ? "(none)" : $"({count})";
 
     private static int ParseStatus(object? value, int fallback)
         => int.TryParse(value?.ToString(), out var status) ? status : fallback;

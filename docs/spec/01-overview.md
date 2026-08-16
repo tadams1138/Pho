@@ -27,6 +27,7 @@ The first version delivers:
 - **Configuration history** — the whole mock configuration is versioned on every change; a single mock's history is a derived view, with revert.
 - **Undo / redo** — global, ordered undo/redo of every configuration change, including cascade group deletion, by stepping through configuration history.
 - **Body helpers** — JSON/XML format and validate buttons on request/response body fields; advisory spell-check on free-text fields.
+- **Basic auth helper** — build an `Authorization: Basic …` header rule from a user id and password, and read an encoded one back, without encoding base64 by hand.
 - **Light / dark theme** — follows system preference, with a manual override.
 - **Export / import mock definitions** — export all stubs and the group tree to a JSON file for backup, and import to restore.
 - **Persistent storage** — stub definitions, groups, and history survive restarts.

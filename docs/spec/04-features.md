@@ -260,3 +260,22 @@ The tree is operable without a mouse; the editor follows the keyboard.
   - Given exactly one stub is selected, however it was selected
   - Then the stub editor shows that stub; selecting a group, several rows, or nothing shows no editor
   - And moving off a stub with unsaved changes warns first (F1)
+
+## F12 — Basic auth credential helper
+
+Mocked services are routinely protected by HTTP Basic authentication, whose header value is a base64
+blob. The editor encodes and decodes that blob so a test author never has to leave the page to do it
+by hand.
+
+- **Build an Authorization header from a user id and password**
+  - Given the stub editor's header rules
+  - When I enter a user id and a password in the basic auth helper and apply it
+  - Then a header rule `Authorization` is set to `Basic <base64 of "userId:password">`, replacing any Authorization rule already on the stub
+  - And the stub then matches only requests presenting exactly that credential
+- **Read an encoded credential back**
+  - Given a header rule whose value is a `Basic …` credential
+  - When I hover over that value
+  - Then the decoded user id and password are shown, so an inherited or imported credential can be read
+- **Leave anything else alone**
+  - Given a header value that is not a decodable `Basic …` credential (another scheme, invalid base64, or no colon in the decoded text)
+  - Then no decoded reading is offered, and the value is treated as an ordinary string

@@ -184,6 +184,52 @@ public class StubDraftTests
     }
 
     [Fact]
+    public void Applying_basic_auth_adds_an_authorization_header_rule()
+    {
+        var draft = StubDraft.ForNewStub();
+
+        draft.SetBasicAuth("user", "pass");
+
+        var rule = draft.RequestHeaders.Should().ContainSingle().Subject;
+        rule.Name.Should().Be("Authorization");
+        rule.Type.Should().Be(MatchRuleType.Equals);
+        rule.Value.Should().Be("Basic dXNlcjpwYXNz");
+    }
+
+    [Fact]
+    public void Applying_basic_auth_replaces_an_authorization_rule_already_present()
+    {
+        var draft = StubDraft.ForNewStub();
+        draft.RequestHeaders.Add(new ParamRuleDraft { Name = "Accept", Value = "application/json" });
+        draft.RequestHeaders.Add(new ParamRuleDraft { Name = "authorization", Value = "Basic old" });
+
+        draft.SetBasicAuth("user", "pass");
+
+        draft.RequestHeaders.Should().HaveCount(2, "the header is replaced, not duplicated");
+        draft.RequestHeaders.Single(r => r.Name == "Accept").Value.Should().Be("application/json");
+        draft.RequestHeaders.Single(r => r.Name.Equals("authorization", StringComparison.OrdinalIgnoreCase))
+            .Value.Should().Be("Basic dXNlcjpwYXNz");
+    }
+
+    [Fact]
+    public void The_basic_auth_helper_reads_back_the_credential_already_on_the_draft()
+    {
+        var draft = StubDraft.ForNewStub();
+        draft.SetBasicAuth("user", "pass");
+
+        draft.CurrentBasicAuth().Should().Be(new BasicCredentials("user", "pass"));
+    }
+
+    [Fact]
+    public void There_is_no_credential_to_read_back_without_a_basic_authorization_rule()
+    {
+        var draft = StubDraft.ForNewStub();
+        draft.RequestHeaders.Add(new ParamRuleDraft { Name = "Authorization", Value = "Bearer token" });
+
+        draft.CurrentBasicAuth().Should().BeNull();
+    }
+
+    [Fact]
     public void A_valid_draft_reports_no_errors()
     {
         StubDraft.From(Existing()).Validate().Should().BeEmpty();

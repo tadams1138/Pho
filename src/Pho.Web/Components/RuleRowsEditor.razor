@@ -29,7 +29,8 @@
                 <td>
                     @if (ParamRuleDraft.TakesValue(row.Type))
                     {
-                        <input type="text" value="@row.Value"
+                        @* A Basic credential reads back as its user id and password on hover (F12). *@
+                        <input type="text" value="@row.Value" title="@BasicAuth.Describe(row.Value)"
                                @oninput="e => SetAsync(() => row.Value = e.Value?.ToString() ?? string.Empty)" />
                     }
                     else
