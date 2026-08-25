@@ -50,4 +50,4 @@ Explicitly out of scope (candidates for later versions):
 
 ## Open questions
 
-The only load-bearing open decision is the **technology stack**, deliberately deferred until the spec is complete (see [`08-architecture.md`](08-architecture.md)). Verification is settled: **human-observed in the UI only, by design** — no programmatic query endpoint ([`06-interfaces.md`](06-interfaces.md)).
+None load-bearing. The **technology stack** is settled — .NET 10 / ASP.NET Core / Blazor Web App (Interactive Server) / EF Core + SQLite ([`08-architecture.md`](08-architecture.md)). Verification is settled: **human-observed in the UI only, by design** — no programmatic query endpoint ([`06-interfaces.md`](06-interfaces.md)).

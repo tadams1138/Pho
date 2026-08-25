@@ -56,4 +56,10 @@ The UI is a single-page web application with three primary areas: the **stub tre
 - **Export**: downloads a JSON file of all stubs and the group tree.
 - **Import**: selects a JSON file and a choice of **replace-all** or **merge**; on success the tree refreshes, on validation failure an error is shown and nothing changes. An import with unsaved editor changes prompts first.
 
-> **Open question:** visual design system / component library is not chosen; depends on the frontend stack (`08-architecture.md`). Whatever is chosen must support **light and dark themes** (F10). Screens above are specified by behavior, not visual design.
+## Visual design (decided)
+
+Screens above are specified by **behavior, not visual design**; the notes here fix only what the behavior depends on.
+
+- **No component library.** The UI is hand-written CSS in the root layout — the admin surface is small enough that a framework would cost more than it saves, and it keeps the app dependency-free beyond the stack in `08-architecture.md`.
+- **Colors come from CSS custom properties** (`--bg`, `--fg`, `--border`, `--muted`, `--accent`, `--err`) declared once, so a theme is a redefinition of that set rather than per-component rules.
+- **Light and dark themes (F10)** are realized as: `prefers-color-scheme` supplies the default, and an explicit choice sets a `data-theme` attribute on the root element that overrides it. The choice persists in browser local storage and is applied before first render so the page does not flash the wrong theme. Reverting to "follow system" clears both the stored value and the attribute.
