@@ -25,6 +25,16 @@ Test authors create and maintain stubs through the web UI.
   - When I add one or more header rules (name + EQUALS / CONTAINS / REGEX / PRESENT / ABSENT)
   - Then the stub matches only requests whose headers satisfy every rule, with header **names compared case-insensitively**
   - And a stub with no header rules is unconstrained by headers
+- **Ignore case in a rule's value**
+  - Given a rule (query param, header, or body) of type EQUALS or CONTAINS
+  - When I turn on **ignore case** for that rule
+  - Then its value comparison is case-insensitive — a rule for `application/json` matches a request sending `application/JSON`
+  - And the setting is **per rule**: other rules on the same stub are unaffected
+  - And it is **off by default**, so a rule matches case-sensitively until someone decides otherwise
+  - Given a rule of type REGEX
+  - Then no ignore-case control is offered, because a regular expression states its own case-insensitivity with `(?i)`
+  - Given a rule of type PRESENT or ABSENT
+  - Then no ignore-case control is offered, because those rules compare no value
 - **Emit response headers**
   - Given the stub editor
   - When I add response header rows (name + value)
@@ -119,6 +129,14 @@ Pho answers requests sent to its mock-serving surface.
   - Path matching supports EXACT, WILDCARD (`*` / `{param}`), and REGEX
   - Query params, headers, and body support EQUALS, CONTAINS, REGEX, PRESENT, and ABSENT rules
   - A request matches only when all specified criteria are satisfied
+- **Case sensitivity**
+  - Given a header rule naming `Content-Type`
+  - When a request arrives whose header is spelled `content-type`
+  - Then the rule still applies — header **names** always compare case-insensitively (RFC 9110), and this is not configurable
+  - Given an EQUALS or CONTAINS rule whose **ignore case** setting is off (the default)
+  - When a request carries the same value in different case
+  - Then the rule does **not** match — values compare case-sensitively unless the rule opts out (F1)
+  - And this is deliberate: a value such as a base64 Basic credential is case-significant, so folding case by default would let a stub accept credentials it was written to reject
 - **Ambiguous match is an error (no priority)**
   - Given more than one enabled stub matches one request
   - Then Pho does **not** pick a winner (there is no priority/ordering); it returns **HTTP 500** with a body identifying the conflict and the stubs involved
@@ -200,6 +218,10 @@ A global undo/redo lets a user reverse and reapply any change to the mock config
 - **Round-trip fidelity**
   - Given I export the full set and later re-import that same file with **replace-all**
   - Then the resulting configuration matches the exported one exactly — every stub (with all matcher and response detail) and the entire group hierarchy are reproduced faithfully
+- **Older files still import**
+  - Given a file exported before a rule field existed, so the field is absent from its rules
+  - When I import it
+  - Then the import succeeds and each absent field takes its documented default — an omitted `ignoreCase` imports as `false`, leaving the configuration matching exactly as it did when it was exported
 - **Validation**
   - Given a malformed or schema-invalid file
   - When I import it
@@ -270,12 +292,28 @@ by hand.
 - **Build an Authorization header from a user id and password**
   - Given the stub editor's header rules
   - When I enter a user id and a password in the basic auth helper and apply it
-  - Then a header rule `Authorization` is set to `Basic <base64 of "userId:password">`, replacing any Authorization rule already on the stub
-  - And the stub then matches only requests presenting exactly that credential
+  - Then a header rule `Authorization` of type **REGEX** is set to `^(?i:Basic)\s+<credential>$`, where `<credential>` is the base64 of `userId:password`, replacing any Authorization rule already on the stub
+  - And the stub then matches only requests presenting exactly that credential under the Basic scheme
+- **The pattern folds the scheme's case and nothing else**
+  - Given a stub carrying a credential built by the helper
+  - When a request arrives with `Authorization: BASIC …`, `Basic …`, or `basic …` and the right credential
+  - Then all three match — `(?i:Basic)` is a **scoped** inline option, so case-insensitivity covers the scheme word alone
+  - And the credential outside that group stays case-sensitive, so a request with the right scheme and a **different** credential is still a miss — base64 is a case-significant alphabet and a wrong password must not be accepted
+  - _(This is why the rule is REGEX rather than an ignore-case EQUALS: the two halves of the value need opposite treatment, which a single per-rule flag cannot express. It is also why `ignoreCase` is ignored on REGEX rules — see `03-domain-model.md`.)_
+- **Only the real scheme is accepted**
+  - Given a stub carrying a credential built by the helper
+  - When a request arrives with a misspelled scheme (`BASSIC`, `Basi`, `Basicc`) or a different one (`Bearer`) carrying the same credential
+  - Then it does **not** match — the pattern is anchored at both ends and spells the scheme out, so leniency extends to case and nothing else
+  - And a value with leading or trailing junk around an otherwise correct credential does not match either, because of those anchors
+- **The credential is escaped into the pattern**
+  - Given a user id and password whose base64 contains regex metacharacters — base64 emits `+`, and `+` means "one or more" to a regular expression
+  - When the helper builds the rule
+  - Then the credential is **regex-escaped** before it is embedded, so it is matched as literal text and a credential containing `+` does not silently become a different pattern
 - **Read an encoded credential back**
-  - Given a header rule whose value is a `Basic …` credential
+  - Given a header rule whose value is a credential — either a pattern the helper built, or a plain `Basic …` value written by hand or imported from an older configuration
   - When I hover over that value
   - Then the decoded user id and password are shown, so an inherited or imported credential can be read
+  - And an existing rule in either form is found and re-read by the helper, so a stub authored before this change is still editable through it
 - **Leave anything else alone**
-  - Given a header value that is not a decodable `Basic …` credential (another scheme, invalid base64, or no colon in the decoded text)
+  - Given a header value that does not decode to a credential (another scheme's value, a regex that is not the shape the helper builds, invalid base64, or decoded text with no colon in it)
   - Then no decoded reading is offered, and the value is treated as an ordinary string

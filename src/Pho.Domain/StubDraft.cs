@@ -14,6 +14,7 @@ public sealed record ParamRuleDraft
     public string Name { get; set; } = "";
     public MatchRuleType Type { get; set; } = MatchRuleType.Equals;
     public string Value { get; set; } = "";
+    public bool IgnoreCase { get; set; }
 
     public bool IsBlank => string.IsNullOrWhiteSpace(Name) && string.IsNullOrWhiteSpace(Value);
 
@@ -21,11 +22,29 @@ public sealed record ParamRuleDraft
     public static bool TakesValue(MatchRuleType type)
         => type is not (MatchRuleType.Present or MatchRuleType.Absent);
 
-    public static ParamRuleDraft From(ParamMatcher matcher)
-        => new() { Name = matcher.Name, Type = matcher.Rule.Type, Value = matcher.Rule.Value ?? "" };
+    /// <summary>
+    /// Whether the row offers an ignore-case control. Only EQUALS and CONTAINS can use it: a REGEX
+    /// pattern says <c>(?i)</c> itself, and PRESENT / ABSENT compare no value.
+    /// </summary>
+    public static bool TakesIgnoreCase(MatchRuleType type)
+        => type is MatchRuleType.Equals or MatchRuleType.Contains;
 
+    public static ParamRuleDraft From(ParamMatcher matcher)
+        => new()
+        {
+            Name = matcher.Name,
+            Type = matcher.Rule.Type,
+            Value = matcher.Rule.Value ?? "",
+            IgnoreCase = matcher.Rule.IgnoreCase
+        };
+
+    // A row keeps a ticked box while the author tries other rule types, but only a type that can use
+    // the flag saves it — so switching to REGEX never smuggles a setting the pattern would ignore.
     public ParamMatcher ToMatcher()
-        => new(Name.Trim(), new MatchRule(Type, TakesValue(Type) ? Value : null));
+        => new(Name.Trim(), new MatchRule(
+            Type,
+            TakesValue(Type) ? Value : null,
+            TakesIgnoreCase(Type) && IgnoreCase));
 }
 
 /// <summary>One editable response-header row in the stub editor.</summary>
@@ -67,6 +86,7 @@ public sealed class StubDraft
     public bool MatchBody { get; set; }
     public MatchRuleType BodyMatchType { get; set; } = MatchRuleType.Equals;
     public string BodyMatchValue { get; set; } = "";
+    public bool BodyIgnoreCase { get; set; }
 
     public int Status { get; set; } = 200;
     public List<HeaderDraft> ResponseHeaders { get; init; } = new();
@@ -101,6 +121,7 @@ public sealed class StubDraft
         MatchBody = stub.Request.Body is not null,
         BodyMatchType = stub.Request.Body?.Type ?? MatchRuleType.Equals,
         BodyMatchValue = stub.Request.Body?.Value ?? "",
+        BodyIgnoreCase = stub.Request.Body?.IgnoreCase ?? false,
         Status = stub.Response.Status,
         ResponseHeaders = stub.Response.Headers.Select(HeaderDraft.From).ToList(),
         Body = stub.Response.Body
@@ -121,6 +142,7 @@ public sealed class StubDraft
         MatchBody = MatchBody,
         BodyMatchType = BodyMatchType,
         BodyMatchValue = BodyMatchValue,
+        BodyIgnoreCase = BodyIgnoreCase,
         Status = Status,
         ResponseHeaders = ResponseHeaders.Select(h => h with { }).ToList(),
         Body = Body
@@ -139,7 +161,9 @@ public sealed class StubDraft
            && QueryParams.SequenceEqual(other.QueryParams)
            && RequestHeaders.SequenceEqual(other.RequestHeaders)
            && MatchBody == other.MatchBody
-           && (!MatchBody || (BodyMatchType == other.BodyMatchType && BodyMatchValue == other.BodyMatchValue))
+           && (!MatchBody || (BodyMatchType == other.BodyMatchType
+                              && BodyMatchValue == other.BodyMatchValue
+                              && BodyIgnoreCase == other.BodyIgnoreCase))
            && Status == other.Status
            && ResponseHeaders.SequenceEqual(other.ResponseHeaders)
            && Body == other.Body;
@@ -154,8 +178,11 @@ public sealed class StubDraft
         var existing = FindAuthorizationRule();
         var rule = existing ?? new ParamRuleDraft { Name = BasicAuth.HeaderName };
 
-        rule.Type = MatchRuleType.Equals;
-        rule.Value = BasicAuth.Encode(userId, password);
+        // A pattern, not an exact value: the scheme word is case-insensitive per RFC 9110 while the
+        // base64 after it is not, and only a regex can fold one without folding the other.
+        rule.Type = MatchRuleType.Regex;
+        rule.Value = BasicAuth.EncodePattern(userId, password);
+        rule.IgnoreCase = false;
 
         if (existing is null) RequestHeaders.Add(rule);
     }
@@ -230,7 +257,10 @@ public sealed class StubDraft
         QueryParams = QueryParams.Where(r => !r.IsBlank).Select(r => r.ToMatcher()).ToList(),
         Headers = RequestHeaders.Where(r => !r.IsBlank).Select(r => r.ToMatcher()).ToList(),
         Body = MatchBody
-            ? new MatchRule(BodyMatchType, ParamRuleDraft.TakesValue(BodyMatchType) ? BodyMatchValue : null)
+            ? new MatchRule(
+                BodyMatchType,
+                ParamRuleDraft.TakesValue(BodyMatchType) ? BodyMatchValue : null,
+                ParamRuleDraft.TakesIgnoreCase(BodyMatchType) && BodyIgnoreCase)
             : null
     };
 

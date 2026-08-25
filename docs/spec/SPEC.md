@@ -22,10 +22,10 @@ Per the global rules, work proceeds **spec-first** and via **BDD/TDD** (Red → 
 
 ## Open questions
 
-Decisions not yet made are marked inline with `> **Open question:**` callouts. The load-bearing ones today:
-
-1. **Technology stack** — intentionally **deferred** until the spec is complete, then Claude recommends a best-fit stack for approval (`08-architecture.md`).
+Decisions not yet made are marked inline with `> **Open question:**` callouts. There are no load-bearing open decisions today.
 
 Decided so far:
+- **Technology stack** — **chosen**: .NET 10 / ASP.NET Core / Blazor Web App (Interactive Server) / EF Core + SQLite, packaged with Docker Compose (`08-architecture.md`).
+- **Visual design** — **chosen**: no component library; hand-written CSS driven by custom properties, with light/dark themes (`05-screens-and-flows.md`).
 - **Authentication** — the authoring UI uses anonymous authorization in v1; Active Directory is a candidate for a later iteration (`02-users-and-roles.md`).
 - **Verification** — human-observed in the UI only, by design (no programmatic query endpoint, none planned); the full request and its receipt time are observable (`06-interfaces.md`).

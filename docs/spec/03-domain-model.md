@@ -50,9 +50,21 @@ Describes which incoming requests a stub applies to. A request matches the stub 
 
 **ParamMatcher** — `{ name: string, rule: MatchRule }`
 
-**MatchRule** — `{ type: EQUALS | CONTAINS | REGEX | PRESENT | ABSENT, value?: string }`
+**MatchRule** — `{ type: EQUALS | CONTAINS | REGEX | PRESENT | ABSENT, value?: string, ignoreCase?: boolean }`
 - `EQUALS`, `CONTAINS`, `REGEX` compare against `value`.
 - `PRESENT` / `ABSENT` assert the parameter/header exists or does not; `value` is ignored.
+- `ignoreCase` — **defaults to false**; comparison against `value` is case-sensitive unless it is set.
+  - Applies to `EQUALS` and `CONTAINS` only. It is **ignored for `REGEX`** — a regular expression states its own case-insensitivity inline with `(?i)`, and two competing ways to say it would be a defect. It is meaningless for `PRESENT` / `ABSENT`, which compare nothing.
+  - An export that predates the field, or omits it, imports as `false` — existing configurations keep the behavior they had.
+
+### Case sensitivity — names versus values
+
+The two are separate decisions and are answered differently.
+
+- **Names are always compared case-insensitively**, and this is not configurable. HTTP field names are case-insensitive per RFC 9110, so `Content-Type` and `content-type` are the same header; a stub that distinguished them would be matching on something the protocol says carries no meaning. The same applies to the `name` on a header `ParamMatcher`.
+- **Values are compared case-sensitively by default**, and leniency is opted into per rule via `ignoreCase`. Header values are not case-insensitive in general, and some carry payloads where case is load-bearing: an `Authorization: Basic <token68>` credential is base64, whose alphabet is case-significant, so folding case there would collapse distinct credentials onto one rule and let a stub accept a password it was written to reject. A mock looser than the service it stands in for turns a passing test into a production failure, so the default is fidelity and the exception is explicit.
+
+> Note that an **authentication scheme** (`Basic`, `Bearer`) *is* a case-insensitive token per RFC 9110 §11.1, while the credential after it is not. Pho does not special-case the `Authorization` header to encode that split — a header whose matching rules silently differ from every other header costs more in surprise than it saves. The Basic auth helper (F12) instead writes a `REGEX` rule of the form `^(?i:Basic)\s+<credential>$`, whose scoped inline option folds the case of the scheme word alone and leaves the base64 exact. That a single value can need case-insensitivity in one half and case-sensitivity in the other is precisely why `ignoreCase` is a rule-level flag that `REGEX` ignores, rather than a value-level behavior. See `04-features.md`.
 
 ## ResponseDefinition
 
