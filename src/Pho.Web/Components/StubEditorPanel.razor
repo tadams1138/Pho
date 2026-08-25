@@ -129,6 +129,14 @@
         </select>
     </label>
 
+    @if (ParamRuleDraft.TakesIgnoreCase(Draft.BodyMatchType))
+    {
+        <label class="inline">
+            <input type="checkbox" checked="@Draft.BodyIgnoreCase"
+                   @onchange="e => SetAsync(() => Draft.BodyIgnoreCase = (bool)e.Value!)" /> Ignore case
+        </label>
+    }
+
     @if (ParamRuleDraft.TakesValue(Draft.BodyMatchType))
     {
         <div>Request body value</div>

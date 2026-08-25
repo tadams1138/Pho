@@ -5,6 +5,7 @@
 - **RequestMatcher** — the part of a stub describing which incoming requests it applies to (method, path, query, headers, body).
 - **ResponseDefinition** — the part of a stub describing what Pho returns (status, headers, body).
 - **Match rule** — how a single field is compared: EQUALS, CONTAINS, REGEX, PRESENT, ABSENT (plus EXACT / WILDCARD / REGEX for paths).
+- **Ignore case** — a per-rule opt-in making an EQUALS or CONTAINS rule compare its *value* case-insensitively. Off by default. Unrelated to header *names*, which always compare case-insensitively and offer no choice.
 - **Ambiguous match** — the error condition where more than one enabled stub matches a single request. Pho does not rank stubs (there is no priority); it returns HTTP 500, logs which stubs matched, and flags it in the UI.
 - **Enabled / disabled** — a stub's on/off state; disabled stubs are retained but excluded from matching, letting users toggle between responses.
 - **Group** — an organizational folder for stubs; groups nest into a tree.

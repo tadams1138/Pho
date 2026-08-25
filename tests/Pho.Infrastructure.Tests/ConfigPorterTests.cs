@@ -93,6 +93,36 @@ public class ConfigPorterTests : IDisposable
     }
 
     [Fact]
+    public async Task A_file_exported_before_ignore_case_existed_still_imports()
+    {
+        // Arrange — a rule as older exports wrote it, with no IgnoreCase member at all
+        var json = """
+        {
+          "Stubs": [{
+            "Id": "8f6d4e1a-0000-4000-8000-000000000001",
+            "Name": "legacy",
+            "Enabled": true,
+            "Request": {
+              "Method": "GET",
+              "Path": { "Type": "Exact", "Value": "/legacy" },
+              "Headers": [{ "Name": "Accept", "Rule": { "Type": "Equals", "Value": "text/plain" } }]
+            },
+            "Response": { "Status": 200, "Body": "ok" }
+          }],
+          "Groups": []
+        }
+        """;
+
+        // Act
+        await _porter.ImportJsonAsync(json, ImportMode.ReplaceAll);
+
+        // Assert — the absent field takes its default, so the stub matches exactly as it always did
+        var rule = (await _stubs.ListAsync()).Single().Request.Headers.Single().Rule;
+        rule.IgnoreCase.Should().BeFalse();
+        rule.Matches("TEXT/PLAIN").Should().BeFalse();
+    }
+
+    [Fact]
     public async Task Invalid_json_is_rejected_and_leaves_config_unchanged()
     {
         await AddStub("safe");
