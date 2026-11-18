@@ -26,7 +26,7 @@ public sealed record MatchResult(MatchOutcome Outcome, IReadOnlyList<Stub> Match
 /// <summary>
 /// Resolves an incoming request against the enabled stubs. There is no priority: exactly one
 /// match is served, none is a 404, and more than one is an ambiguous-match error (HTTP 500).
-/// See docs/spec/03-domain-model.md (Matching resolution) and F4 in docs/spec/04-features.md.
+/// See SPEC.md section 6.2 (M-4 to M-9) and F4.
 /// </summary>
 public static class MockResolver
 {

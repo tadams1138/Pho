@@ -12,7 +12,7 @@ public enum TreeRowKind
 /// <summary>
 /// One visible line of the stub tree, flattened into display order. The flat list is what the UI
 /// renders, multi-selects, and moves through with the arrow keys — see
-/// <see cref="TreeFlattener"/> and docs/spec/05-screens-and-flows.md (stub tree).
+/// <see cref="TreeFlattener"/> and SPEC.md section 8.3 (stub tree).
 /// </summary>
 public sealed record TreeRow
 {

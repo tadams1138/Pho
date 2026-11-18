@@ -6,7 +6,7 @@ namespace Pho.Domain;
 /// <summary>
 /// Flattens the group tree into the ordered list of rows the UI actually shows, honouring
 /// collapsed groups. Keyboard navigation and shift-range selection both work over this list,
-/// so the ordering here is the tree's visual ordering. See docs/spec/05-screens-and-flows.md.
+/// so the ordering here is the tree's visual ordering. See SPEC.md L-6 (stub tree ordering).
 /// </summary>
 public static class TreeFlattener
 {

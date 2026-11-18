@@ -65,7 +65,7 @@ public sealed record HeaderDraft
 /// stub. Holding the edit state here (rather than in the component) is what makes "is this dirty?"
 /// and "is this valid?" ordinary testable logic — the panel keeps a saved baseline and compares
 /// with <see cref="ValueEquals"/> to decide whether leaving needs a warning.
-/// See docs/spec/05-screens-and-flows.md (stub editor).
+/// See SPEC.md section 8.4 (stub editor).
 /// </summary>
 public sealed class StubDraft
 {
@@ -99,7 +99,7 @@ public sealed class StubDraft
 
     /// <summary>
     /// Fills a blank name in from the request before saving, so authoring a stub never demands a
-    /// name the method and path already state. See docs/spec/05-screens-and-flows.md (stub editor).
+    /// name the method and path already state. See SPEC.md F1.4.
     /// </summary>
     public void ApplyDefaultName()
     {

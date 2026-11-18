@@ -13,7 +13,7 @@ public enum MatchRuleType
 
 /// <summary>
 /// A rule applied to a single value (query param, header, or body).
-/// See docs/spec/03-domain-model.md (MatchRule).
+/// See SPEC.md R-11 to R-16 and section 5.5.
 /// </summary>
 /// <param name="IgnoreCase">
 /// Opts this rule's <em>value</em> comparison out of case sensitivity. Off by default: header values

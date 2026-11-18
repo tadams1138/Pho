@@ -4,7 +4,7 @@ namespace Pho.Domain;
 
 /// <summary>
 /// A domain-level view of an inbound request on the mock-serving surface — the data used
-/// for matching and recorded as a ReceivedRequest. See docs/spec/03-domain-model.md.
+/// for matching and recorded as a ReceivedRequest. See SPEC.md Q-2 and section 6.1.
 /// </summary>
 public sealed record HttpRequestData(
     string Method,

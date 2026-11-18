@@ -8,7 +8,7 @@ namespace Pho.Infrastructure;
 
 /// <summary>
 /// EF Core/SQLite-backed export/import. Export serializes the whole configuration (stubs + group
-/// tree) as JSON; import applies it as replace-all or merge. See F8 in docs/spec/04-features.md.
+/// tree) as JSON; import applies it as replace-all or merge. See SPEC.md F7.
 /// </summary>
 public sealed class EfConfigPorter : IConfigPorter
 {

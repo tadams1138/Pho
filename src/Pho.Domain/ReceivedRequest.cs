@@ -6,7 +6,7 @@ namespace Pho.Domain;
 /// <summary>
 /// An immutable record of one request received on the mock-serving surface, captured verbatim
 /// for verification (F5). Recorded for every request — matched, unmatched, or ambiguous.
-/// See docs/spec/03-domain-model.md (ReceivedRequest).
+/// See SPEC.md section 5.7 (Q-1 to Q-4).
 /// </summary>
 public sealed class ReceivedRequest
 {

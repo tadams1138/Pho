@@ -21,7 +21,7 @@ public sealed record ParamMatcher(string Name, MatchRule Rule);
 /// <summary>
 /// Describes which incoming requests a stub applies to. A request matches only when all
 /// specified criteria match; unspecified criteria do not constrain.
-/// See docs/spec/03-domain-model.md (RequestMatcher).
+/// See SPEC.md section 5.4 (R-1 to R-16).
 /// </summary>
 public sealed record RequestMatcher
 {

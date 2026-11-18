@@ -9,7 +9,7 @@ public sealed record GroupNode(Group? Group, IReadOnlyList<GroupNode> Children, 
 
 /// <summary>
 /// Builds the nested tree of groups and stubs for the UI. The root node has a null Group and holds
-/// the top-level groups plus ungrouped stubs. See docs/spec/05-screens-and-flows.md (stub tree).
+/// the top-level groups plus ungrouped stubs. See SPEC.md section 8.3 (stub tree).
 /// </summary>
 public static class GroupTree
 {

@@ -3,10 +3,10 @@ using System.Threading.Tasks;
 namespace Pho.Domain;
 
 /// <summary>
-/// Whole-configuration undo/redo (F6/F7). Every change records a new revision capturing the
+/// Whole-configuration undo/redo (F6). Every change records a new revision capturing the
 /// entire configuration; undo/redo step a pointer through the revisions and restore state.
 /// Making a new change after undo discards the forward (redo) revisions.
-/// See docs/spec/03-domain-model.md (Configuration history and undo/redo).
+/// See SPEC.md section 5.8 (H-1 to H-10) and F6.
 /// </summary>
 public sealed class ConfigHistoryService
 {

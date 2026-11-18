@@ -57,14 +57,14 @@ without a human clicking through the web UI.
 
 ## Technical notes
 - **Conflicts with current spec decisions — these must be revised when this is built:**
-  - `docs/spec/06-interfaces.md` §6.2 and CLAUDE.md: "No public authoring API in v1 —
+  - SPEC.md D-2 and AGENTS.md: "No public authoring API in v1 —
     Blazor components call in-process services directly." An MCP endpoint *is* a public
     authoring surface.
-  - `docs/spec/06-interfaces.md` "Verification — human-observed only (by design)": "There
+  - SPEC.md D-1 and F5.9 (verification is human-observed only): "There
     is no programmatic query endpoint and none is planned." MCP read access to received
     requests reverses this.
-  - `docs/spec/01-overview.md` lists a public configuration API as a v1 non-goal.
-  - `docs/spec/02-users-and-roles.md`: anonymous authoring is already the v1 stance, so
+  - SPEC.md section 2.2 lists a public configuration API as a v1 non-goal.
+  - SPEC.md U-2: anonymous authoring is already the v1 stance, so
     no-auth is consistent with it.
 - **Library:** the official C# MCP SDK (`ModelContextProtocol.AspNetCore`) provides
   Streamable HTTP transport via `builder.Services.AddMcpServer().WithHttpTransport()` and
@@ -81,7 +81,7 @@ without a human clicking through the web UI.
   `IConfigPorter` / `EfConfigPorter` (`ExportJsonAsync`, import) in `src/Pho.Infrastructure`.
 - **Concurrency / live UI:** the Blazor Interactive Server UI may hold state from before an
   MCP edit. Check whether open UI sessions refresh (or at least don't overwrite) after an
-  agent changes the configuration; `docs/spec/07-non-functional.md` "Concurrency and
+  agent changes the configuration; SPEC.md section 11.3 "Concurrency and
   consistency" is the relevant section.
 - Tests: MCP tool tests in `Pho.Test.Integration` (in-process MCP client against
   `WebApplicationFactory<Program>`), scenarios in `Pho.Test.Acceptance` (item #1 layout).
@@ -122,7 +122,7 @@ without a human clicking through the web UI.
 - UI changes: the history/undo list shows origin, agent and on-behalf-of for each
   revision. UI edits show "admin UI" (no user identity — the UI is anonymous in v1).
 - Domain change: `ConfigRevision` gains fields for origin, agent name/version, and
-  on-behalf-of (`docs/spec/03-domain-model.md` "ConfigRevision"; EF migration in
+  on-behalf-of (SPEC.md section 5.8 "Configuration history"; EF migration in
   `src/Pho.Infrastructure`; set via `ConfigHistoryService`). Export/import is unaffected
   (history isn't exported).
 
