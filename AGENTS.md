@@ -93,6 +93,11 @@ position in the single-row `HistoryState`); resolution = `MockResolver`/`MockSer
 - FluentAssertions stays on 7.x in every test project.
 - Code comments cite `SPEC.md` by requirement ID or section; keep them correct when `SPEC.md` changes.
 - If a scenario exposes a real gap between spec and code, report it rather than papering over it.
+  Tag it `@gap` with the reason; it then shows as skipped in `dotnet test`. Set `PHO_RUN_GAPS=1`
+  to run gap scenarios and watch them fail. Remove the tag when the gap is closed.
+- Each acceptance scenario gets its own app instance and in-memory SQLite database; setup steps go
+  through Pho's own services so history/undo behave as for a user. The "default addresses"
+  scenario binds the real ports 8931/8932, so it fails if a local Pho is already running.
 
 ## Architecture and technical decisions
 
