@@ -34,3 +34,10 @@ Solution file is `Pho.slnx` (the .NET 10 XML solution format); the arg-less comm
 - **No public authoring API** in v1 — Blazor components call in-process services directly. Only the mock-serving surface is a public HTTP surface.
 - **Stubs have no priority.** Multiple enabled stubs matching one request is an error (HTTP 500 + logged + flagged in UI), not resolved by ranking.
 - **History is whole-configuration** (`ConfigRevision`), not per-stub; this is what makes cascade-delete-undo work. See `docs/spec/03-domain-model.md`.
+
+## TODO
+
+Work still to be done is listed in `TODO.md`, with each item's details in
+`TODO/<number>-<title>.md`. New feature ideas get the next number (highest + 1) and a
+detail file. When an item is fully implemented, describe the behavior in the spec,
+remove it from `TODO.md`, delete its detail file, and ask whether to renumber.

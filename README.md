@@ -135,3 +135,5 @@ dotnet run --project src/Pho.Web     # run the app
 - Mock-serving surface: `http://localhost:8932` — point the system under test here.
 
 The SQLite database (`pho.db`) is created on first run in the working directory.
+
+Planned work is tracked in [TODO.md](TODO.md).
