@@ -1,9 +1,9 @@
-# 3 — Make the admin UI agent-friendly
+# 2 — Make the admin UI agent-friendly
 
 ## Summary
 Make Pho's admin UI easy for browser agents (e.g. Claude in Chrome) to understand and
 operate: semantic, accessible markup; a visible Help page also served as `/llms.txt`; and
-a pointer to the MCP endpoint (#2) for heavier work. No hidden instructions.
+a pointer to the MCP endpoint (#1) for heavier work. No hidden instructions.
 
 ## Motivation
 Users will drive Pho through browser-agent plugins. Those agents read the page mostly
@@ -24,7 +24,7 @@ decides how well they do. The same work improves Pho for screen-reader and keybo
 - Every action available by drag-and-drop (e.g. moving a stub or group) also has a
   button/menu equivalent.
 - Stable, meaningful element ids or `data-testid` attributes on key controls (also useful
-  to the bUnit acceptance tests from #1).
+  to the bUnit acceptance tests in `Pho.Test.Acceptance`).
 - Page `<title>` and headings reflect the current view (e.g. "Edit stub 'Get user' — Pho").
 
 ### 2. Help page + `/llms.txt`
@@ -66,16 +66,16 @@ decides how well they do. The same work improves Pho for screen-reader and keybo
 - `/llms.txt`: map in `src/Pho.Web/Program.cs` next to `/health` and `/export` on the admin
   surface; generate from the same Markdown source as the Help page (e.g. an embedded
   `.md` rendered to HTML for the page, served raw for `llms.txt`).
-- Spec: `SPEC.md` (after #1) gains "the admin UI is operable by assistive technology and
+- Spec: `SPEC.md` gains "the admin UI is operable by assistive technology and
   agents" and "built-in help"; ARIA/llms.txt specifics go to Gherkin/code per the
   three-layer model.
 - Optional: try a real Claude-in-Chrome run against Pho afterwards to find remaining
   friction.
 
 ## Dependencies
-- **#2** for the MCP pointer (the rest can ship independently; add the pointer when #2
+- **#1** for the MCP pointer (the rest can ship independently; add the pointer when #1
   lands).
-- **#1** for where the requirements and scenarios live (`SPEC.md`, `Pho.Test.Acceptance`).
+- The requirements and scenarios live in `SPEC.md` and `Pho.Test.Acceptance` (both exist).
 
 ## Out of scope
 - A redesign of the UI.

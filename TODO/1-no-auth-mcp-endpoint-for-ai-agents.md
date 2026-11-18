@@ -1,4 +1,4 @@
-# 2 — No-auth MCP endpoint for AI agents
+# 1 — No-auth MCP endpoint for AI agents
 
 ## Summary
 Expose an MCP (Model Context Protocol) server endpoint, with no authentication, through
@@ -52,8 +52,8 @@ without a human clicking through the web UI.
 - A change made through MCP appears in history marked as made via MCP, with the agent's
   client name/version and, when supplied, the self-reported "on behalf of" value; a change
   made in the UI is marked as made in the admin UI.
-- Acceptance scenarios for this live as executable `.feature` files (per item #1's
-  structure, if done by then).
+- Acceptance scenarios for this live as executable `.feature` files (in the
+  feature files of `Pho.Test.Acceptance`).
 
 ## Technical notes
 - **Conflicts with current spec decisions — these must be revised when this is built:**
@@ -84,11 +84,11 @@ without a human clicking through the web UI.
   agent changes the configuration; SPEC.md section 11.3 "Concurrency and
   consistency" is the relevant section.
 - Tests: MCP tool tests in `Pho.Test.Integration` (in-process MCP client against
-  `WebApplicationFactory<Program>`), scenarios in `Pho.Test.Acceptance` (item #1 layout).
+  `WebApplicationFactory<Program>`), scenarios in `Pho.Test.Acceptance` (feature files).
 
 ## Dependencies
-- Easier after **#1** (single spec, test-project layout, executable feature files), but
-  not strictly blocked by it.
+- None. The single spec (`SPEC.md`), the test-project layout and the executable feature
+  files in `Pho.Test.Acceptance` already exist.
 
 ## Decisions
 - **Admin port**, no separate port.

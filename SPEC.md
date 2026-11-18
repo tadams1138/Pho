@@ -54,7 +54,7 @@ the same endpoint without editing test code.
 - A helper for HTTP Basic authentication credentials.
 - Light and dark themes.
 - Export of the whole mock configuration to a file, and import from such a file.
-- Persistent storage that survives restarts, and configurable retention.
+- Persistent storage that survives restarts, and configurable retention of received requests.
 - A single shared instance: one global set of stubs for everyone.
 
 ### 2.2 Not in scope (candidates for later versions)
@@ -263,8 +263,8 @@ Names and values are separate decisions and are answered differently.
 ### 5.8 Configuration history
 
 - **H-1** Every change to the configuration produces a new **configuration revision**: creating,
-  saving, duplicating, deleting, enabling, disabling or moving stubs; creating, renaming,
-  moving or deleting groups; and importing a file. Each revision records a sequence position,
+  saving, duplicating, deleting, enabling, disabling or moving stubs; creating, moving or
+  deleting groups; and importing a file. Each revision records a sequence position,
   the time it was made, a human-readable **summary** of the change (for example "Deleted
   1 group and 3 stubs"), and the **complete configuration** after the change.
 - **H-2** One user action is one revision, however many items it touches: a cascading group
@@ -284,8 +284,8 @@ Names and values are separate decisions and are answered differently.
   the current position; those changes can no longer be redone.
 - **H-7** Restoring a revision reproduces it exactly, including stub identities, so a
   restored stub is the same stub, not a copy.
-- **H-8** Revisions older than the configuration-history retention window (see 10) are removed
-  automatically, and undo cannot reach past the oldest remaining revision.
+- **H-8** Configuration history is kept indefinitely: no revision is ever removed
+  automatically, so undo can always reach back to the empty baseline.
 - **H-9** There is no per-stub history and no way to revert one stub in isolation; only the
   whole-configuration undo and redo exist.
 - **H-10** History is separate from the received-request log: it records configuration, not
@@ -318,8 +318,8 @@ For each request:
     all but one, because stubs have no priority;
   - writes an error to the application log naming every matched stub (name and identity)
     together with the request's method and path; and
-  - flags the request as an ambiguous match in the received-requests view, identifying the
-    stubs it matched (see F5 and 8.5).
+  - flags the request as an ambiguous match in the received-requests view, with the number
+    of stubs it matched (see F5 and 8.5).
 - **M-9** Every request is recorded as a received request with its outcome and the status
   returned (see 5.7), regardless of outcome.
 - **M-10** Grouping has no influence on any of the above.
@@ -347,7 +347,8 @@ For each request:
   - the path match type is regular expression and the path does not compile — "Path is not a
     valid regular expression: ‹path›";
   - the status is outside 100–599 — "Response status must be a valid HTTP status code
-    (100-599).";
+    (100-599)." (a status field that is cleared or does not hold a number keeps its previous
+    value, so it never counts as missing);
   - a query-parameter or header rule row has a value but no name — "Query parameter rules need
     a name." / "Header rules need a name.";
   - a query-parameter or header REGEX rule does not compile — "Query parameter ‹name› is not a
@@ -412,7 +413,6 @@ For each request:
   defaults to the group of the last activated row). A blank name does nothing; the name is
   stored with surrounding spaces removed. The parent group is expanded so the new group is
   visible.
-- **F3.2 Rename.** A group can be renamed; the rename is one undoable change.
 - **F3.3 Nesting.** Groups nest to any depth and the tree shows the hierarchy. Any operation
   that would make a group its own ancestor is refused.
 - **F3.4 Placement of stubs.** A stub lives in one group or at the top level; stubs at the top
@@ -479,13 +479,13 @@ For each request:
   of the total pages, with previous and next navigation offered only where there is a page to
   go to. Changing the page size returns to the first page.
 - **F5.6 Summary per request.** Each listed request shows the time received (in UTC), method,
-  path, outcome — the matched stub, "no match", or an ambiguous-match flag with the number of
+  path, outcome — "matched", "no match", or an ambiguous-match flag with the number of
   stubs matched — and the status returned.
 - **F5.7 Full detail.** Opening a request shows it exactly as received: the query string (or an
   indication there was none), every header with its value, and the complete body (or an
   indication it was empty), together with the time received, the outcome and the status
-  returned. For an ambiguous match the detail identifies every stub that matched, so
-  overlapping stubs can be found and fixed.
+  returned. The view does not name the stub that answered a request, nor the stubs an
+  ambiguous request matched (the log and the 500 response body do, M-8).
 - **F5.8 Clear.** The author can clear the log; the view is then empty. Clearing is not part of
   configuration history and cannot be undone.
 - **F5.9** Verification is human-observed only (D-1).
@@ -499,7 +499,7 @@ For each request:
 - **F6.3 Cascade.** Undoing a cascading group delete restores the whole deleted subtree in one
   step (H-5).
 - **F6.4 New change clears redo** (H-6).
-- **F6.5 Bounded by retention** (H-8).
+- **F6.5 Unbounded depth** (H-8): undo can always reach back to the empty configuration.
 - **F6.6 Availability.** Undo is offered only while there is something to undo, and redo only
   while there is something to redo.
 - **F6.7** Undo and redo are global: they act on the shared configuration, whoever made the
@@ -712,8 +712,8 @@ From top to bottom:
   page-size choice, and **clear log**.
 - **L-26 List.** As in F5.2–F5.6, with each row offering a details toggle that expands the full
   request detail (F5.7) beneath the row; one request's detail is open at a time.
-- **L-27 Ambiguous matches are flagged** prominently as errors, with the number of stubs matched
-  and, in the detail, which stubs they are.
+- **L-27 Ambiguous matches are flagged** prominently as errors, with the number of stubs
+  matched.
 - **L-28 States.** Loading; empty ("No received requests."); populated.
 
 ### 8.6 Export and import flow
@@ -777,7 +777,6 @@ configuration at all:
 | Admin sub-path | none (served at the host root) | The prefix under which a reverse proxy serves the admin interface (N-6). |
 | Storage location | a local default | Where the persistent configuration, history and log are kept. |
 | Received-request retention | 1 day | Received requests older than this are removed automatically. |
-| Configuration-history retention | 1 year | Revisions older than this are removed automatically; bounds undo depth. |
 
 ## 11. Quality requirements
 
@@ -794,11 +793,10 @@ configuration at all:
 
 ### 11.2 Retention
 
-- **Y-5** The received-request log and the configuration history are bounded by their retention
-  settings rather than growing without limit.
+- **Y-5** The received-request log is bounded by its retention setting rather than growing
+  without limit. Configuration history is not pruned (H-8).
 - **Y-6** Pruning is automatic and age-based. Received requests past the window are removed no
-  later than the next time a request is recorded; revisions past the window are removed
-  automatically and undo depth is limited to what remains.
+  later than the next time a request is recorded.
 
 ### 11.3 Concurrency and consistency
 

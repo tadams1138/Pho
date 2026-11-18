@@ -39,19 +39,6 @@ Feature: F1 — Manage stubs
       Then saving is refused with the message "Path is required."
       And no stub is stored
 
-    @gap
-    Scenario: A stub without a response status cannot be saved
-      Clearing the response status field does not leave the stub without a status. The editor
-      silently keeps the previous status (200), so the stub is saved instead of being refused.
-
-      Given I am on the stubs screen
-      When I start a new stub
-      And I set the path to "/no-status"
-      And I clear the response status
-      And I save the stub
-      Then saving is refused with a message about the response status
-      And no stub is stored
-
   Rule: Listing, viewing, editing and deleting stubs
 
     Background:

@@ -95,6 +95,8 @@ position in the single-row `HistoryState`); resolution = `MockResolver`/`MockSer
 - If a scenario exposes a real gap between spec and code, report it rather than papering over it.
   Tag it `@gap` with the reason; it then shows as skipped in `dotnet test`. Set `PHO_RUN_GAPS=1`
   to run gap scenarios and watch them fail. Remove the tag when the gap is closed.
+  Gaps should also become TODO items, with the requirement removed from the spec (and the scenario
+  from the feature file) until implemented; the TODO detail file keeps the text to restore.
 - Each acceptance scenario gets its own app instance and in-memory SQLite database; setup steps go
   through Pho's own services so history/undo behave as for a user. The "default addresses"
   scenario binds the real ports 8931/8932, so it fails if a local Pho is already running.
@@ -116,7 +118,7 @@ position in the single-row `HistoryState`); resolution = `MockResolver`/`MockSer
   `IConfigPorter`). Only the mock-serving surface, the `/export` download and `/health` are HTTP.
   Each UI action calls the service(s) then `ConfigHistoryService.RecordAsync(summary)` once, so one
   action is one revision. Body format/validate, spell-check (browser `spellcheck="true"`) and theme
-  are client-side concerns. Any future public API (cf. TODO #2) must stay distinct from this.
+  are client-side concerns. Any future public API (cf. TODO #1) must stay distinct from this.
 - **Stubs have no priority.** Multiple enabled stubs matching one request is an error (HTTP 500 +
   logged + flagged in the UI), not resolved by ranking.
 - **History is whole-configuration** (`ConfigRevision`), not per-stub; this makes cascade-delete

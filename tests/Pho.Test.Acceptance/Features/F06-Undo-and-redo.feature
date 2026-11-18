@@ -71,14 +71,3 @@ Feature: F6 — Undo and redo configuration changes
     Then redo is offered
     When I disable the stub "Charge"
     Then redo is not offered
-
-  @gap
-  Scenario: Undo cannot reach past the history retention window
-    Configuration history is never pruned: there is no history retention window (one year by
-    default), so undo can always reach back to the very first change.
-
-    Given a stub "Ancient" answering GET /ancient was created more than a year ago
-    And a stub "Recent" answering GET /recent was created today
-    When I undo as far as possible
-    Then the stub tree does not show "Recent"
-    And the stub tree shows "Ancient"

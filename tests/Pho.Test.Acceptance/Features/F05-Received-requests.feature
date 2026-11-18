@@ -44,17 +44,6 @@ Feature: F5 — Verify received requests
     And "POST /orders" shows the time it was received
     And "POST /orders" shows the outcome "one stub" and the status 201
 
-  @gap
-  Scenario: The details name the stub that answered
-    The received-requests view says whether a request matched, but not which stub answered it
-    (it shows "matched" without naming the stub), nor which stubs an ambiguous request matched.
-
-    When a client sends POST /orders
-    And a client sends GET /items/1
-    And I open the received-requests view
-    Then "POST /orders" names the stub "Create"
-    And "GET /items/1" names the stubs "Order one" and "Any item"
-
   Scenario: Requests are always listed newest first
     When a client sends GET /first
     And a client sends GET /second

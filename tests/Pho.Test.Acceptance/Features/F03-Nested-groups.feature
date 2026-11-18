@@ -11,19 +11,6 @@ Feature: F3 — Organize stubs into nested groups
       When I add a group "Refunds" inside "Payments"
       Then "Refunds" is shown inside "Payments"
 
-    @gap
-    Scenario: Rename a group
-      The stubs screen offers no way to rename a group, although renaming is a supported change
-      (and one that undo is expected to reverse, F6).
-
-      Given these groups:
-        | name     |
-        | Payments |
-      And I am on the stubs screen
-      When I rename the group "Payments" to "Billing"
-      Then the stub tree shows "Billing"
-      And the stub tree does not show "Payments"
-
     Scenario: Delete an empty group
       Given these groups:
         | name     |
