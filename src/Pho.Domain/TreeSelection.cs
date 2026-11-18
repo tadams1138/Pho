@@ -8,7 +8,7 @@ namespace Pho.Domain;
 /// <summary>
 /// The set of tree rows the user has selected, plus the anchor a shift-range extends from.
 /// Immutable: every operation returns a new selection. Groups and stubs share one id space,
-/// so a selection can mix both. See docs/spec/05-screens-and-flows.md (stub tree).
+/// so a selection can mix both. See SPEC.md section 8.3 (stub tree).
 /// </summary>
 public sealed class TreeSelection
 {

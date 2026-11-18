@@ -3,7 +3,7 @@ using System;
 namespace Pho.Domain;
 
 /// <summary>
-/// One mocking rule: a request matcher paired with a response. See docs/spec/03-domain-model.md (Stub).
+/// One mocking rule: a request matcher paired with a response. See SPEC.md section 5.3 (S-1 to S-3).
 /// Stubs have no priority; overlapping enabled stubs are an ambiguous-match error (see MockResolver).
 /// </summary>
 public sealed class Stub

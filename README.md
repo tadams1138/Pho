@@ -2,11 +2,24 @@
 
 Pho is a **mock web service** — a configurable stub server that imitates real web services during testing (comparable to WireMock, Mockoon, or MockServer). Define fake endpoints and canned responses in a web UI; Pho serves them so a system under test can run against a controllable stand-in, and it records received requests so calls can be verified.
 
-This project is **spec-first**: the authoritative specification lives in [`docs/spec/`](docs/spec/SPEC.md). Read it before contributing.
+**Why use it?** Real dependencies are slow, flaky, rate-limited, and rarely fail on demand. With Pho you control exactly what the "other service" answers, switch between behaviors without touching test code, and see exactly what your system called.
 
-## Status
+**Key features**
 
-The v1 feature set is implemented (.NET 10, ASP.NET Core + Blazor, EF Core/SQLite) and deployable via Docker Compose. See the spec in [`docs/spec/`](docs/spec/SPEC.md) for the full behavior.
+- Stubs matched on method, path (exact, wildcard, regex), query parameters, headers and body, with optional case-insensitive matching
+- Nested groups, enable/disable (singly or in bulk), duplicate, drag-and-drop organization
+- Whole-configuration undo/redo, including undoing a group deletion
+- Received-request log with filtering, paging and full request detail
+- JSON/XML body formatting and validation, Basic-auth header helper, spell-check hints, light/dark theme
+- Export/import for backup; runs as a single Docker container; works behind a reverse proxy
+
+**How to use it**
+
+1. Open the admin UI (port 8931) and define a stub: what request to match and what response to return.
+2. Point the system under test at the mock-serving surface (port 8932) instead of the real service.
+3. Open the received-requests view to check what was called.
+
+Deployment instructions follow; the full behavior is in [SPEC.md](SPEC.md). Contributors and AI agents: start with [AGENTS.md](AGENTS.md). Planned work is tracked in [TODO.md](TODO.md).
 
 ## Tech stack
 
@@ -120,7 +133,7 @@ docker compose down -v    # stop and delete the data volume
 
 ### Backup and restore
 
-Mock definitions can be **exported to a JSON file** from the web UI for backup, and **imported** to restore them into another instance. Received-request logs are not part of a backup. See [`docs/spec/04-features.md`](docs/spec/04-features.md).
+Mock definitions can be **exported to a JSON file** from the web UI for backup, and **imported** to restore them into another instance. Received-request logs are not part of a backup. See F7 in [SPEC.md](SPEC.md).
 
 ## Local development
 
@@ -136,4 +149,4 @@ dotnet run --project src/Pho.Web     # run the app
 
 The SQLite database (`pho.db`) is created on first run in the working directory.
 
-Planned work is tracked in [TODO.md](TODO.md).
+Planned work is tracked in [TODO.md](TODO.md); the specification is [SPEC.md](SPEC.md) and agent/contributor guidance is in [AGENTS.md](AGENTS.md).

@@ -64,7 +64,7 @@ app.MapWhen(policy.IsMockTraffic, mockApp => mockApp.UseMiddleware<MockServingMi
 // is configured as Pho:PathBase. Either way it lands in Request.PathBase, which App.razor renders
 // as the page's <base href> — and every link in the UI is relative to that. Forwarded headers are
 // accepted from any address: Pho sits on a test network behind its proxy, and these headers only
-// affect link generation. See docs/spec/08-architecture.md (Hosting behind a reverse proxy).
+// affect link generation. See SPEC.md section 9.2 (N-4 to N-9) and AGENTS.md.
 var forwarded = new ForwardedHeadersOptions
 {
     ForwardedHeaders = ForwardedHeaders.XForwardedProto
@@ -106,7 +106,7 @@ app.UseAntiforgery();
 // Liveness endpoint for the Docker Compose healthcheck (admin port).
 app.MapHealthChecks("/health");
 
-// Full-set export download (F8).
+// Full-set export download (F7).
 app.MapGet("/export", async (IConfigPorter porter, HttpContext ctx) =>
 {
     var json = await porter.ExportJsonAsync();

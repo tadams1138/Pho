@@ -8,7 +8,7 @@ namespace Pho.Domain;
 /// The stubs a multi-row selection covers: stubs picked directly, plus every stub nested inside a
 /// selected group. Selecting a group means its contents here for the same reason it does when
 /// deleting (see <see cref="TreeDeletion"/>) — it is what backs the toolbar's Enable / Disable
-/// buttons, which act on the whole selection at once. See docs/spec/04-features.md (F1).
+/// buttons, which act on the whole selection at once. See SPEC.md F2.5.
 /// </summary>
 public static class TreeStubSelection
 {

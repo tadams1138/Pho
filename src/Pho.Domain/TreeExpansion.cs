@@ -8,7 +8,7 @@ namespace Pho.Domain;
 /// Which groups an expand-all / collapse-all acts on. With nothing selected the action covers the
 /// whole tree; with groups selected it is scoped to those groups and everything nested under them,
 /// so a user can open or close one branch without disturbing the rest.
-/// See docs/spec/05-screens-and-flows.md (stub tree).
+/// See SPEC.md F3.8 and L-7 (stub tree).
 /// </summary>
 public static class TreeExpansion
 {

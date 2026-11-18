@@ -35,7 +35,7 @@ public sealed record DeletionPlan(
 
 /// <summary>
 /// Turns a multi-row selection into a <see cref="DeletionPlan"/>. Selecting a group implies
-/// everything nested inside it (deletion cascades — see docs/spec/03-domain-model.md).
+/// everything nested inside it (deletion cascades — see SPEC.md G-5).
 /// </summary>
 public static class TreeDeletion
 {

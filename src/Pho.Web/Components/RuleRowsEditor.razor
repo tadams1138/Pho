@@ -41,7 +41,7 @@
                 </td>
                 <td>
                     @* Only EQUALS and CONTAINS can use it: a pattern says (?i) itself, and
-                       PRESENT / ABSENT compare no value. See docs/spec/04-features.md (F1). *@
+                       PRESENT / ABSENT compare no value. See SPEC.md F1.8 and C-3/C-4. *@
                     @if (ParamRuleDraft.TakesIgnoreCase(row.Type))
                     {
                         <input type="checkbox" checked="@row.IgnoreCase" title="Ignore case"

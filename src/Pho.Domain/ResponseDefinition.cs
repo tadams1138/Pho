@@ -5,7 +5,7 @@ namespace Pho.Domain;
 public sealed record HeaderValue(string Name, string Value);
 
 /// <summary>
-/// What Pho returns when a stub is selected. See docs/spec/03-domain-model.md (ResponseDefinition).
+/// What Pho returns when a stub is selected. See SPEC.md section 5.6 (P-1 to P-4).
 /// </summary>
 public sealed record ResponseDefinition
 {

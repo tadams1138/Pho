@@ -8,7 +8,7 @@ namespace Pho.Domain;
 public sealed record FormatResult(bool Ok, string Output, string? Error);
 
 /// <summary>
-/// Formats and validates request/response bodies as JSON or XML for the stub editor (F9).
+/// Formats and validates request/response bodies as JSON or XML for the stub editor (F8).
 /// A successful result carries the pretty-printed output; a failure carries a parse error.
 /// </summary>
 public static class BodyFormatter

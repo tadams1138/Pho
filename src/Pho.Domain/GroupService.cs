@@ -8,7 +8,7 @@ namespace Pho.Domain;
 /// <summary>
 /// Application service for the group tree (F3): create, rename, move (with cycle prevention),
 /// and cascade delete. Deleting a group removes all descendant groups and every stub within
-/// them. See docs/spec/03-domain-model.md and F3 in docs/spec/04-features.md.
+/// them. See SPEC.md section 5.2 (G-1 to G-6) and F3.
 /// </summary>
 public sealed class GroupService
 {

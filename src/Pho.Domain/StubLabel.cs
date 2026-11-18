@@ -4,7 +4,7 @@ namespace Pho.Domain;
 /// How a stub is labelled in the tree. A stub shows its own name when it has one; an unnamed stub
 /// falls back to what it actually matches — "GET /users/1" — so no row is ever blank. Kept out of
 /// <see cref="Stub"/> itself because Stub is serialized (export, config history) and a computed
-/// member would leak into that shape. See docs/spec/05-screens-and-flows.md (stub tree).
+/// member would leak into that shape. See SPEC.md L-9 (stub tree rows).
 /// </summary>
 public static class StubLabel
 {

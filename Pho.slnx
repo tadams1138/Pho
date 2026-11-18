@@ -5,8 +5,8 @@
     <Project Path="src/Pho.Web/Pho.Web.csproj" />
   </Folder>
   <Folder Name="/tests/">
-    <Project Path="tests/Pho.Domain.Tests/Pho.Domain.Tests.csproj" />
-    <Project Path="tests/Pho.Infrastructure.Tests/Pho.Infrastructure.Tests.csproj" />
-    <Project Path="tests/Pho.Web.Tests/Pho.Web.Tests.csproj" />
+    <Project Path="tests/Pho.Test.Acceptance/Pho.Test.Acceptance.csproj" />
+    <Project Path="tests/Pho.Test.Integration/Pho.Test.Integration.csproj" />
+    <Project Path="tests/Pho.Test.Unit/Pho.Test.Unit.csproj" />
   </Folder>
 </Solution>

@@ -9,7 +9,7 @@ namespace Pho.Domain;
 /// Application service for whole-tree edits made from the stub tree: deleting a multi-row
 /// selection in one action, and rearranging rows by drag and drop. Both are expressed over the
 /// same selection the UI holds, and both are recorded by the caller as a single undoable
-/// revision. See F3/F7 in docs/spec/04-features.md.
+/// revision. See SPEC.md F2.5 and F3.
 /// </summary>
 public sealed class TreeEditService
 {
