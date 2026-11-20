@@ -8,7 +8,6 @@
     }
   },
   "enabledPlugins": {
-    "todo@tadams-plugins": true,
-    "csharp-lsp@claude-plugins-official": true
+    "todo@tadams-plugins": true
   }
 }
